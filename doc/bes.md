@@ -23,3 +23,20 @@ Total size: 16
   - 0008 (0x30303038)
   - 0100 (0x30313030)
 3. Unknown two words (or eight chars?).
+
+Unknown
+-------
+
+This block is optional and its size depends on BES version.
+
+Total size: 0 - 12288 (0x3000)
+
+This block usually contains 0x7D bytes.
+
+Data
+----
+
+| Offset | Name    | Type     | Description  |
+|--------|---------|----------|--------------|
+| 0      | Unknown | UINT32LE | Usually 0x70 |
+| 4      | Unknown | UINT32LE | Usually 0x59 |

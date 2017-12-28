@@ -98,3 +98,33 @@ Total size: unknown
 5. Name
 
 ### Data
+
+### Vertices
+
+### Faces
+
+This block contains object faces.
+Every face is made of 3 vertices (a, b, c), therefore number of vertices should be divisible by number 3.
+Vertex value points to vertex ID in Vertices data block
+
+Total size: 4 * (Number of vertices + 1)
+
+| Offset | Name           | Type     |
+|--------|----------------|----------|
+| 0      | Vertices count | UINT32LE |
+| 4      | Vertex 1a      | UINT32LE |
+| 8      | Vertex 1b      | UINT32LE |
+| 12     | Vertex 1c      | UINT32LE |
+| 16     | Vertex 2a      | UINT32LE |
+| 20     | Vertex 2b      | UINT32LE |
+| 24     | Vertex 2c      | UINT32LE |
+| ...    | ...            | ...      |
+
+1. Number of vertices in this data block
+2. Vertex 'a' for face '1'
+3. Vertex 'b' for face '1'
+4. Vertex 'c' for face '1'
+5. Vertex 'a' for face '2'
+6. Vertex 'b' for face '2'
+7. Vertex 'c' for face '2'
+8. ...

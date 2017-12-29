@@ -46,35 +46,39 @@ This block usually contains 0x7D bytes.
 Data
 ----
 
-### Unknown
-| Offset | Name    | Type     |
-|--------|---------|----------|
-| 0      | Unknown | UINT32LE |
-| 4      | Offset  | UINT32LE |
+Data block contains several sub-blocks.
+Each sub-block contain it's label, size and data itself.
 
-1. Usually 0x70
-2. Offset to 'Unknown' block
+Here is quick reference table of known data sub-blocks:
+
+| Block Name | Label |
+|------------|-------|
+| User Info  | 0x70  |
+| Vertices   | 0x32  |
+| Faces      | 0x33  |
 
 ### User info
-
-Total size: 76 + comment length
 
 Space between 'Name' and 'Comment' is filled with zeros
 
 
 | Offset | Name           | Type     |
 |--------|----------------|----------|
-| 0      | Name length    | UINT32LE |
-| 4      | Comment length | UINT32LE |
-| 8      | Unknown        | UINT32LE |
-| 12     | Name           | CHAR[]   |
-| 76     | Comment        | CHAR[]   |
+| 0      | Label          | UINT32LE |
+| 4      | Blok size      | UINT32LE |
+| 8      | Name length    | UINT32LE |
+| 12     | Comment length | UINT32LE |
+| 16     | Unknown        | UINT32LE |
+| 20     | Name           | CHAR[]   |
+| 84     | Comment        | CHAR[]   |
 
-1. Length of 'Name' string. Should not exceed 64 bytes.
-2. Length of 'Comment' string.
-3. Unknown
-4. Name (max 64)
-5. Comment
+1. Label of this sub-block - always 0x70
+2. Size of this sub-block (including this field and label)
+3. Length of 'Name' string. Should not exceed 64 bytes.
+4. Length of 'Comment' string.
+5. Unknown
+6. Name (max 64)
+7. Comment
 
 ### Unknown
 Offset of 'Unknown' block points here.
@@ -101,30 +105,40 @@ Total size: unknown
 
 ### Vertices
 
+| Offset | Name           | Type     |
+|--------|----------------|----------|
+| 0      | Label          | UINT32LE |
+| 4      | Blok size      | UINT32LE |
+
+1. Label of this sub-block - always 0x32
+2. Size of this sub-block (including this field and label)
+
 ### Faces
 
 This block contains object faces.
 Every face is made of 3 vertices (a, b, c), therefore number of vertices should be divisible by number 3.
 Vertex value points to vertex ID in Vertices data block
 
-Total size: 4 * (Number of vertices + 1)
-
 | Offset | Name           | Type     |
 |--------|----------------|----------|
-| 0      | Vertices count | UINT32LE |
-| 4      | Vertex 1a      | UINT32LE |
-| 8      | Vertex 1b      | UINT32LE |
-| 12     | Vertex 1c      | UINT32LE |
-| 16     | Vertex 2a      | UINT32LE |
-| 20     | Vertex 2b      | UINT32LE |
-| 24     | Vertex 2c      | UINT32LE |
+| 0      | Label          | UINT32LE |
+| 4      | Blok size      | UINT32LE |
+| 8      | Vertices count | UINT32LE |
+| 12     | Vertex 1a      | UINT32LE |
+| 16     | Vertex 1b      | UINT32LE |
+| 20     | Vertex 1c      | UINT32LE |
+| 24     | Vertex 2a      | UINT32LE |
+| 28     | Vertex 2b      | UINT32LE |
+| 32     | Vertex 2c      | UINT32LE |
 | ...    | ...            | ...      |
 
-1. Number of vertices in this data block
-2. Vertex 'a' for face '1'
-3. Vertex 'b' for face '1'
-4. Vertex 'c' for face '1'
-5. Vertex 'a' for face '2'
-6. Vertex 'b' for face '2'
-7. Vertex 'c' for face '2'
-8. ...
+1. Label of this sub-block - always 0x33
+2. Size of this sub-block (including this field and label)
+3. Number of vertices in this data block
+4. Vertex 'a' for face '1'
+5. Vertex 'b' for face '1'
+6. Vertex 'c' for face '1'
+7. Vertex 'a' for face '2'
+8. Vertex 'b' for face '2'
+9. Vertex 'c' for face '2'
+10. ...

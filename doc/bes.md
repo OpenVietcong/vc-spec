@@ -128,9 +128,29 @@ Other data sub-blocks may follow. Known sub-blocks:
 |--------|----------------|----------|
 | 0      | Label          | UINT32LE |
 | 4      | Blok size      | UINT32LE |
+| 8      | Vertices count | UINT32LE |
+| 12     | Size of vertex | UINT32LE |
+| 16     | Unknown        | UINT32LE |
 
 1. Label of this sub-block - always 0x032
 2. Size of this sub-block (including this field and label)
+3. Number of vertices in this data block
+4. Size of vertex structure
+5. Unknown - usually 0x12
+
+Vertices data structures follows:
+
+| Offset | Name       | Type      |
+|--------|------------|-----------|
+| 0      | Position x | FLOAT32LE |
+| 4      | Position y | FLOAT32LE |
+| 8      | Position z | FLOAT32LE |
+| 12     | Unknown    | CHAR[]    |
+
+1. 'X' vertex coordinate.
+2. 'Y' vertex coordinate.
+3. 'Z' vertex coordinate.
+4. Unknown
 
 ### Faces
 

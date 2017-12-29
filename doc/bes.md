@@ -155,32 +155,30 @@ Vertices data structures follows:
 ### Faces
 
 This block contains object faces.
-Every face is made of 3 vertices (a, b, c), therefore number of vertices should be divisible by number 3.
-Vertex value points to vertex ID in Vertices data block
+Every face is made of 3 vertices (a, b, c).
+Vertex value points to vertex ID in Vertices data block.
 
-| Offset | Name           | Type     |
-|--------|----------------|----------|
-| 0      | Label          | UINT32LE |
-| 4      | Blok size      | UINT32LE |
-| 8      | Vertices count | UINT32LE |
-| 12     | Vertex 1a      | UINT32LE |
-| 16     | Vertex 1b      | UINT32LE |
-| 20     | Vertex 1c      | UINT32LE |
-| 24     | Vertex 2a      | UINT32LE |
-| 28     | Vertex 2b      | UINT32LE |
-| 32     | Vertex 2c      | UINT32LE |
-| ...    | ...            | ...      |
+| Offset | Name        | Type     |
+|--------|-------------|----------|
+| 0      | Label       | UINT32LE |
+| 4      | Blok size   | UINT32LE |
+| 8      | Faces count | UINT32LE |
 
 1. Label of this sub-block - always 0x033
 2. Size of this sub-block (including this field and label)
-3. Number of vertices in this data block
-4. Vertex 'a' for face '1'
-5. Vertex 'b' for face '1'
-6. Vertex 'c' for face '1'
-7. Vertex 'a' for face '2'
-8. Vertex 'b' for face '2'
-9. Vertex 'c' for face '2'
-10. ...
+3. Number of faces in this data block
+
+Faces data structures follows (size of each structure is 12 bytes):
+
+| Offset | Name     | Type     |
+|--------|----------|----------|
+| 0      | Vertex a | UINT32LE |
+| 4      | Vertex b | UINT32LE |
+| 8      | Vertex c | UINT32LE |
+
+1. Vertex 'a'
+2. Vertex 'b'
+3. Vertex 'c'
 
 ### Properties
 

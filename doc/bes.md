@@ -8,7 +8,7 @@ File format
 
 This file is made of:
 * Header
-* Unkown
+* Preview
 * Data
 
 Header
@@ -34,14 +34,19 @@ Total size: 16
 3. Unknown word (or four chars?).
 4. Unknown (always zeros).
 
-Unknown
+Preview
 -------
 
-This block is optional and its size depends on BES version.
+Total size: 12288 (0x3000)
 
-Total size: 0 - 12288 (0x3000)
+This block contains preview image made by 3D modelling tool.
+Preview image is made of 64x64 pixels, where every pixel is the following format:
 
-This block usually contains 0x7D bytes.
+| Offset | Name      | Type  |
+|--------|-----------|-------|
+| 0      | Green     | UINT8 |
+| 1      | Blue      | UINT8 |
+| 2      | Red       | UINT8 |
 
 Data
 ----

@@ -51,20 +51,21 @@ Each sub-block contain it's label, size and data itself.
 
 Here is quick reference table of known data sub-blocks:
 
-| Block Name | Label |
-|------------|-------|
-| Mesh       | 0x01  |
-| ...        | ....  |
-| Unknown 30 | 0x30  |
-| Unknown 31 | 0x31  |
-| Vertices   | 0x32  |
-| Faces      | 0x33  |
-| Unknown 34 | 0x34  |
-| Unknown 35 | 0x35  |
-| Unknown 36 | 0x36  |
-| ...        | ...   |
-| User Info  | 0x70  |
-| ...        |       |
+| Block Name    | Label |
+|---------------|-------|
+| Mesh          | 0x001 |
+| ...           | ....  |
+| Unknown 0x030 | 0x030 |
+| Unknown 0x031 | 0x031 |
+| Vertices      | 0x032 |
+| Faces         | 0x033 |
+| Properties    | 0x034 |
+| Unknown 0x035 | 0x035 |
+| Unknown 0x036 | 0x036 |
+| ...           | ...   |
+| User Info     | 0x070 |
+| ...           |       |
+| Unknown 0x100 | 0x100 |
 
 ### Mesh
 
@@ -76,7 +77,7 @@ Here is quick reference table of known data sub-blocks:
 | 12     | Name length    | UINT32   |
 | 16     | Name           | CHAR[]   |
 
-1. Label of this sub-block - always 0x01
+1. Label of this sub-block - always 0x001
 2. Size of this sub-block (including this field and label)
 3. Number of children meshes inside of this mesh
 4. Length of 'Name' string
@@ -84,9 +85,10 @@ Here is quick reference table of known data sub-blocks:
 
 Other data sub-blocks may follow. Known sub-blocks:
 * Mesh
-* Unknown 0x30
+* Unknown 0x030
+* Unknown 0x100
 
-### Unknown 0x30
+### Unknown 0x030
 
 | Offset | Name      | Type     |
 |--------|-----------|----------|
@@ -94,17 +96,17 @@ Other data sub-blocks may follow. Known sub-blocks:
 | 4      | Blok size | UINT32LE |
 | 8      | Unknown   | UINT32LE |
 
-1. Label of this sub-block - always 0x30
+1. Label of this sub-block - always 0x030
 2. Size of this sub-block (including this field and label)
 3. Unknown
 
 Other data sub-blocks may follow. Known sub-blocks:
-* Unknown 0x31
-* Unknown 0x34
-* Unknown 0x35
-* Unknown 0x36
+* Unknown 0x031
+* Properties
+* Unknown 0x035
+* Unknown 0x036
 
-### Unknown 0x31
+### Unknown 0x031
 
 | Offset | Name      | Type     |
 |--------|-----------|----------|
@@ -112,7 +114,7 @@ Other data sub-blocks may follow. Known sub-blocks:
 | 4      | Blok size | UINT32LE |
 | 8      | Unknown   | UINT32LE |
 
-1. Label of this sub-block - always 0x31
+1. Label of this sub-block - always 0x031
 2. Size of this sub-block (including this field and label)
 3. Unknown - usually 0xFFFFFFFF
 
@@ -127,7 +129,7 @@ Other data sub-blocks may follow. Known sub-blocks:
 | 0      | Label          | UINT32LE |
 | 4      | Blok size      | UINT32LE |
 
-1. Label of this sub-block - always 0x32
+1. Label of this sub-block - always 0x032
 2. Size of this sub-block (including this field and label)
 
 ### Faces
@@ -149,7 +151,7 @@ Vertex value points to vertex ID in Vertices data block
 | 32     | Vertex 2c      | UINT32LE |
 | ...    | ...            | ...      |
 
-1. Label of this sub-block - always 0x33
+1. Label of this sub-block - always 0x033
 2. Size of this sub-block (including this field and label)
 3. Number of vertices in this data block
 4. Vertex 'a' for face '1'
@@ -160,7 +162,24 @@ Vertex value points to vertex ID in Vertices data block
 9. Vertex 'c' for face '2'
 10. ...
 
-### Unknown 0x34
+### Properties
+
+This block contains User defined properties (as known from 3D Studio Max).
+Purpose of these properties is unknown.
+
+| Offset | Name        | Type     |
+|--------|-------------|----------|
+| 0      | Label       | UINT32LE |
+| 4      | Blok size   | UINT32LE |
+| 8      | Text length | UINT32LE |
+| 12     | Text        | CHAR[]   |
+
+1. Label of this sub-block - always 0x034
+2. Size of this sub-block (including this field and label)
+3. Length of 'Text' string
+4. String containing user defined properties
+
+### Unknown 0x035
 
 | Offset | Name      | Type     |
 |--------|-----------|----------|
@@ -168,23 +187,11 @@ Vertex value points to vertex ID in Vertices data block
 | 4      | Blok size | UINT32LE |
 | 8      | Unknown   | CHAR[]   |
 
-1. Label of this sub-block - always 0x34
+1. Label of this sub-block - always 0x035
 2. Size of this sub-block (including this field and label)
 3. Unknown
 
-### Unknown 0x35
-
-| Offset | Name      | Type     |
-|--------|-----------|----------|
-| 0      | Label     | UINT32LE |
-| 4      | Blok size | UINT32LE |
-| 8      | Unknown   | CHAR[]   |
-
-1. Label of this sub-block - always 0x35
-2. Size of this sub-block (including this field and label)
-3. Unknown
-
-### Unknown 0x36
+### Unknown 0x036
 
 | Offset | Name      | Type     |
 |--------|-----------|----------|
@@ -192,7 +199,7 @@ Vertex value points to vertex ID in Vertices data block
 | 4      | Blok size | UINT32LE |
 | 8      | Unknown   | UINT32LE |
 
-1. Label of this sub-block - always 0x36
+1. Label of this sub-block - always 0x036
 2. Size of this sub-block (including this field and label)
 3. Unknown
 
@@ -211,10 +218,22 @@ Space between 'Name' and 'Comment' is filled with zeros
 | 20     | Name           | CHAR[]   |
 | 84     | Comment        | CHAR[]   |
 
-1. Label of this sub-block - always 0x70
+1. Label of this sub-block - always 0x070
 2. Size of this sub-block (including this field and label)
 3. Length of 'Name' string. Should not exceed 64 bytes.
 4. Length of 'Comment' string.
 5. Unknown
 6. Name (max 64)
 7. Comment
+
+### Unknown 0x100
+
+| Offset | Name      | Type     |
+|--------|-----------|----------|
+| 0      | Label     | UINT32LE |
+| 4      | Blok size | UINT32LE |
+| 8      | Unknown   | UINT32LE |
+
+1. Label of this sub-block - always 0x100
+2. Size of this sub-block (including this field and label)
+3. Unknown

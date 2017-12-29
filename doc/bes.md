@@ -53,55 +53,72 @@ Here is quick reference table of known data sub-blocks:
 
 | Block Name | Label |
 |------------|-------|
-| User Info  | 0x70  |
+| Mesh       | 0x01  |
+| ...        | ....  |
+| Unknown 30 | 0x30  |
+| Unknown 31 | 0x31  |
 | Vertices   | 0x32  |
 | Faces      | 0x33  |
+| Unknown 34 | 0x34  |
+| Unknown 35 | 0x35  |
+| Unknown 36 | 0x36  |
+| ...        | ...   |
+| User Info  | 0x70  |
+| ...        |       |
 
-### User info
-
-Space between 'Name' and 'Comment' is filled with zeros
-
+### Mesh
 
 | Offset | Name           | Type     |
 |--------|----------------|----------|
 | 0      | Label          | UINT32LE |
 | 4      | Blok size      | UINT32LE |
-| 8      | Name length    | UINT32LE |
-| 12     | Comment length | UINT32LE |
-| 16     | Unknown        | UINT32LE |
-| 20     | Name           | CHAR[]   |
-| 84     | Comment        | CHAR[]   |
+| 8      | Mesh children  | UINT32LE |
+| 12     | Name length    | UINT32   |
+| 16     | Name           | CHAR[]   |
 
-1. Label of this sub-block - always 0x70
+1. Label of this sub-block - always 0x01
 2. Size of this sub-block (including this field and label)
-3. Length of 'Name' string. Should not exceed 64 bytes.
-4. Length of 'Comment' string.
-5. Unknown
-6. Name (max 64)
-7. Comment
-
-### Unknown
-Offset of 'Unknown' block points here.
-
-### Object information
-
-Total size: unknown
-
-| Offset | Name          | Type     |
-|--------|---------------|----------|
-| 0      | Parent length | UINT32LE |
-| 4      | Parent        | CHAR[]   |
-| -      | Unknown       | CHAR[]   |
-| -      | Name length   | UINT32LE |
-| -      | Name          | CHAR[]   |
-
-1. Length of parent's name
-2. Parent's name
-3. Unknown
-4. Name length
+3. Number of children meshes inside of this mesh
+4. Length of 'Name' string
 5. Name
 
-### Data
+Other data sub-blocks may follow. Known sub-blocks:
+* Mesh
+* Unknown 0x30
+
+### Unknown 0x30
+
+| Offset | Name      | Type     |
+|--------|-----------|----------|
+| 0      | Label     | UINT32LE |
+| 4      | Blok size | UINT32LE |
+| 8      | Unknown   | UINT32LE |
+
+1. Label of this sub-block - always 0x30
+2. Size of this sub-block (including this field and label)
+3. Unknown
+
+Other data sub-blocks may follow. Known sub-blocks:
+* Unknown 0x31
+* Unknown 0x34
+* Unknown 0x35
+* Unknown 0x36
+
+### Unknown 0x31
+
+| Offset | Name      | Type     |
+|--------|-----------|----------|
+| 0      | Label     | UINT32LE |
+| 4      | Blok size | UINT32LE |
+| 8      | Unknown   | UINT32LE |
+
+1. Label of this sub-block - always 0x31
+2. Size of this sub-block (including this field and label)
+3. Unknown - usually 0xFFFFFFFF
+
+Other data sub-blocks may follow. Known sub-blocks:
+* Vertices
+* Faces
 
 ### Vertices
 
@@ -142,3 +159,62 @@ Vertex value points to vertex ID in Vertices data block
 8. Vertex 'b' for face '2'
 9. Vertex 'c' for face '2'
 10. ...
+
+### Unknown 0x34
+
+| Offset | Name      | Type     |
+|--------|-----------|----------|
+| 0      | Label     | UINT32LE |
+| 4      | Blok size | UINT32LE |
+| 8      | Unknown   | CHAR[]   |
+
+1. Label of this sub-block - always 0x34
+2. Size of this sub-block (including this field and label)
+3. Unknown
+
+### Unknown 0x35
+
+| Offset | Name      | Type     |
+|--------|-----------|----------|
+| 0      | Label     | UINT32LE |
+| 4      | Blok size | UINT32LE |
+| 8      | Unknown   | CHAR[]   |
+
+1. Label of this sub-block - always 0x35
+2. Size of this sub-block (including this field and label)
+3. Unknown
+
+### Unknown 0x36
+
+| Offset | Name      | Type     |
+|--------|-----------|----------|
+| 0      | Label     | UINT32LE |
+| 4      | Blok size | UINT32LE |
+| 8      | Unknown   | UINT32LE |
+
+1. Label of this sub-block - always 0x36
+2. Size of this sub-block (including this field and label)
+3. Unknown
+
+### User info
+
+Space between 'Name' and 'Comment' is filled with zeros
+
+
+| Offset | Name           | Type     |
+|--------|----------------|----------|
+| 0      | Label          | UINT32LE |
+| 4      | Blok size      | UINT32LE |
+| 8      | Name length    | UINT32LE |
+| 12     | Comment length | UINT32LE |
+| 16     | Unknown        | UINT32LE |
+| 20     | Name           | CHAR[]   |
+| 84     | Comment        | CHAR[]   |
+
+1. Label of this sub-block - always 0x70
+2. Size of this sub-block (including this field and label)
+3. Length of 'Name' string. Should not exceed 64 bytes.
+4. Length of 'Comment' string.
+5. Unknown
+6. Name (max 64)
+7. Comment

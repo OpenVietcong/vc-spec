@@ -58,70 +58,72 @@ Here is quick reference table of known data sub-blocks:
 
 | Block Name    | Label |
 |---------------|-------|
-| Mesh          | 0x001 |
+| Object        | 0x001 |
 | ...           | ....  |
 | Unknown 0x030 | 0x030 |
-| Unknown 0x031 | 0x031 |
+| Mesh          | 0x031 |
 | Vertices      | 0x032 |
 | Faces         | 0x033 |
 | Properties    | 0x034 |
 | Unknown 0x035 | 0x035 |
 | Unknown 0x036 | 0x036 |
 | ...           | ...   |
+| Unknown 0x038 | 0x038 |
+| ...           | ...   |
 | User Info     | 0x070 |
 | ...           |       |
 | Unknown 0x100 | 0x100 |
 
-### Mesh
+### Object
 
-| Offset | Name           | Type     |
-|--------|----------------|----------|
-| 0      | Label          | UINT32LE |
-| 4      | Blok size      | UINT32LE |
-| 8      | Mesh children  | UINT32LE |
-| 12     | Name length    | UINT32   |
-| 16     | Name           | CHAR[]   |
+| Offset | Name            | Type     |
+|--------|-----------------|----------|
+| 0      | Label           | UINT32LE |
+| 4      | Blok size       | UINT32LE |
+| 8      | Object children | UINT32LE |
+| 12     | Name length     | UINT32   |
+| 16     | Name            | CHAR[]   |
 
 1. Label of this sub-block - always 0x001
 2. Size of this sub-block (including this field and label)
-3. Number of children meshes inside of this mesh
+3. Number of children objects inside of this one
 4. Length of 'Name' string
 5. Name
 
 Other data sub-blocks may follow. Known sub-blocks:
-* Mesh
+* Object
 * Unknown 0x030
 * Unknown 0x100
 
 ### Unknown 0x030
 
-| Offset | Name      | Type     |
-|--------|-----------|----------|
-| 0      | Label     | UINT32LE |
-| 4      | Blok size | UINT32LE |
-| 8      | Unknown   | UINT32LE |
+| Offset | Name          | Type     |
+|--------|---------------|----------|
+| 0      | Label         | UINT32LE |
+| 4      | Blok size     | UINT32LE |
+| 8      | Mesh children | UINT32LE |
 
 1. Label of this sub-block - always 0x030
 2. Size of this sub-block (including this field and label)
-3. Unknown
+3. Number of children meshes inside of this block
 
 Other data sub-blocks may follow. Known sub-blocks:
-* Unknown 0x031
+* Mesh
 * Properties
 * Unknown 0x035
 * Unknown 0x036
 
-### Unknown 0x031
+### Mesh
 
 | Offset | Name      | Type     |
 |--------|-----------|----------|
 | 0      | Label     | UINT32LE |
 | 4      | Blok size | UINT32LE |
-| 8      | Unknown   | UINT32LE |
+| 8      | Mesh ID   | UINT32LE |
 
 1. Label of this sub-block - always 0x031
 2. Size of this sub-block (including this field and label)
-3. Unknown - usually 0xFFFFFFFF
+3. ID usually in interval <0;total-meshes) or 0xFFFFFFFF
 
 Other data sub-blocks may follow. Known sub-blocks:
 * Vertices
@@ -223,6 +225,18 @@ Purpose of these properties is unknown.
 | 8      | Unknown   | UINT32LE |
 
 1. Label of this sub-block - always 0x036
+2. Size of this sub-block (including this field and label)
+3. Unknown
+
+### Unknown 0x038
+
+| Offset | Name      | Type     |
+|--------|-----------|----------|
+| 0      | Label     | UINT32LE |
+| 4      | Blok size | UINT32LE |
+| 8      | Unknown   | CHAR[]   |
+
+1. Label of this sub-block - always 0x038
 2. Size of this sub-block (including this field and label)
 3. Unknown
 

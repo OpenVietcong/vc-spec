@@ -143,7 +143,9 @@ class BES(object):
             print("Block size do not match: {} vs {}".format(len(data), count))
 
     def parse_block_unk35(self, data, index):
-        print("{}Unk35 ({} B)".format(" "*(index*2), len(data)))
+        (x, y, z) = self.unpack("<fff", data)
+
+        print("{}Unk35 ({} B) - position: [{}][{}][{}]".format(" "*(index*2), len(data), x, y, z))
 
     def parse_block_unk36(self, data, index):
         print("{}Unk36 ({} B)".format(" "*(index*2), len(data)))

@@ -143,7 +143,7 @@ Other data sub-blocks may follow. Known sub-blocks:
 2. Size of this sub-block (including this field and label)
 3. Number of vertices in this data block
 4. Size of vertex structure
-5. Unknown - usually 0x12
+5. Unknown - usually 0x12 or 0x112
 
 Vertices data structures follows:
 
@@ -206,16 +206,21 @@ Purpose of these properties is unknown.
 
 ### Unknown 0x035
 
-| Offset | Name      | Type     |
-|--------|-----------|----------|
-| 0      | Label     | UINT32LE |
-| 4      | Blok size | UINT32LE |
-| 8      | Unknown   | CHAR[]   |
+| Offset | Name      | Type         |
+|--------|-----------|--------------|
+| 0      | Label     | UINT32LE     |
+| 4      | Blok size | UINT32LE     |
+| 8      | Position1 | FLOAT32LE[3] |
+| 20     | Unknown1  | CHAR[64]     |
+| 84     | Position2 | FLOAT32LE[3] |
+| 96     | Unknown2  | CHAR[4]      |
 
 1. Label of this sub-block - always 0x035
-2. Size of this sub-block (including this field and label)
-3. Unknown
-
+2. Size of this sub-block (including this field and label) - always 0x64 (100B)
+3. Object position in scene - coordinates are in the following order: x, y, z
+4. Unknown
+5. Same values as 3.
+6. Unknown - usually 0x3F800000
 ### Unknown 0x036
 
 | Offset | Name      | Type     |

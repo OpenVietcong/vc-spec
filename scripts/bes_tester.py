@@ -28,6 +28,9 @@ def hex_dump(data, index):
             print()
     print()
 
+def pchar_to_string(pchar):
+    return str(pchar, 'ascii').strip(chr(0))
+
 class BES(object):
     vertices = []
     faces = []
@@ -98,7 +101,8 @@ class BES(object):
     def parse_block_object(self, data, index):
         (children, name_size) = self.unpack("<II", data)
         (name,) = self.unpack("<" + str(name_size) + "s", data[8:])
-        print("{}Object ({} B) - children: {}, name({}): {}".format(" "*(index*2), len(data), children, name_size, str(name, "ascii")))
+        print("{}Object ({} B) - children: {}, name({}): {}".format(" "*(index*2), len(data), children, name_size,
+            pchar_to_string(name)))
 
         self.parse_data(data[8+name_size:], index + 1)
 
@@ -134,10 +138,8 @@ class BES(object):
 
     def parse_block_properties(self, data, index):
         (count, ) = self.unpack("<I", data)
-        prop = ""
-        for i in range(count):
-            prop += chr(data[i + 4])
-        print("{}Properties ({} B): {}".format(" "*(index*2), len(data), prop))
+        (prop,) = self.unpack("<" + str(count) + "s", data[4:])
+        print("{}Properties ({} B): {}".format(" "*(index*2), len(data), pchar_to_string(prop)))
 
         if count + 4 != len(data):
             print("Block size do not match: {} vs {}".format(len(data), count))
@@ -157,7 +159,8 @@ class BES(object):
         (name_size, comment_size, unknown) = self.unpack("<III", data)
         (name,) = self.unpack("<" + str(name_size) + "s", data[12:])
         (comment,) = self.unpack("<" + str(comment_size) + "s", data[76:])
-        print("{}User info ({} B) - name({}): {}, comment({}): {}, unknown: {:08x}".format(" "*(index*2), len(data), name_size, str(name, 'ascii'), comment_size, str(comment, 'ascii'), unknown))
+        print("{}User info ({} B) - name({}): {}, comment({}): {}, unknown: {:08x}".format(" "*(index*2), len(data), name_size,
+            pchar_to_string(name), comment_size, pchar_to_string(comment), unknown))
         
 
     def parse_block_unk100(self, data, index):

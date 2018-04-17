@@ -30,6 +30,7 @@ __author__ = "Jan Havran"
 class CBF(object):
 	fileData  = []
 	fileTable = []
+	fileList  = []
 
 	class Header:
 		size = 0x20
@@ -46,6 +47,20 @@ class CBF(object):
 		st_unpack = struct.Struct(st_fmt).unpack_from
 
 		return st_unpack(data[:st_len])
+
+	def decryptTableItem(self, encryptedItem):
+		lookUpTable = [0x32, 0xF3, 0x1E, 0x06, 0x45, 0x70, 0x32, 0xAA, 0x55, 0x3F, 0xF1, 0xDE, 0xA3, 0x44, 0x21, 0xB4]
+		itemLength = len(encryptedItem)
+		decryptedItem = bytearray(itemLength)
+
+		key = itemLength
+		for pos in range(itemLength):
+			encryptedByte = encryptedItem[pos]
+			decryptedByte = encryptedByte ^ lookUpTable[key & 0xF]
+			key = encryptedByte
+			decryptedItem[pos] = decryptedByte
+
+		return bytes(decryptedItem)
 
 	def parse_header(self):
 		if len(self.fileData) < CBF.Header.size:
@@ -71,8 +86,37 @@ class CBF(object):
 
 		return fileCnt
 
+	def parse_table(self):
+		pos = 0
+
+		while pos < len(self.fileTable):
+			if pos + 2 > len(self.fileTable):
+				print(self.fileName + ": Corrupted item size in file table")
+				return
+			(itemSize, ) = self.unpack("<H", self.fileTable[pos:])
+			pos += 2
+
+			if pos + itemSize > len(self.fileTable):
+				print(self.fileName + ": Corrupted item in file table")
+				return
+			itemData = self.decryptTableItem(self.fileTable[pos:pos+itemSize])
+			pos += itemSize
+
+			(fileOffset, unk1, unk2, unk3, unk4) = self.unpack("<I4I", itemData)
+			(fileSize, unk5, unk6, fileCompress, unk7) = self.unpack("<I2II1I", itemData[20:])
+
+			(fileName, ) = self.unpack("<" + str(itemSize - 40) + "s", itemData[40:])
+			if fileName[-1] != 0x0:
+				print(self.fileName + ": Corrupted item name in file table")
+				return
+			fileName = str(fileName, 'windows-1250').strip(chr(0))
+
+			self.fileList.append((fileName, self.fileData[fileOffset:fileOffset + fileSize], fileCompress))
+		return None
+
 	def check(self):
 		self.parse_header()
+		self.parse_table()
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()

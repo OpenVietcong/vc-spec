@@ -18,12 +18,13 @@
 # ##### END GPL LICENSE BLOCK #####
 
 """
-cbf.py - util for checking CBF files for integrity
+cbf.py - util for unpacking (not compressed) CBF files and checking them for integrity
 """
 
 import sys
 import argparse
 import struct
+import os
 
 __author__ = "Jan Havran"
 
@@ -61,6 +62,18 @@ class CBF(object):
 			decryptedItem[pos] = decryptedByte
 
 		return bytes(decryptedItem)
+
+	def decryptFile(self, encryptedFile):
+		fileLength = len(encryptedFile)
+		decryptedFile = bytearray(fileLength)
+
+		key = fileLength & 0xFF
+		for pos in range(fileLength):
+			encryptedByte = encryptedFile[pos]
+			decryptedByte = ((encryptedByte + 0xA6 + key) & 0xFF) ^ key
+			decryptedFile[pos] = decryptedByte
+
+		return bytes(decryptedFile)
 
 	def parse_header(self):
 		if len(self.fileData) < CBF.Header.size:
@@ -114,28 +127,59 @@ class CBF(object):
 			self.fileList.append((fileName, self.fileData[fileOffset:fileOffset + fileSize], fileCompress))
 		return None
 
+	def parse_file(self, file):
+		parsed_file = bytes(0)
+		if not file[2]:
+			parsed_file = self.decryptFile(file[1])
+
+		return parsed_file
+
+	def parse_files(self):
+		for file in self.fileList:
+			fileName = file[0].replace("\\", "/")
+			if not os.path.exists(os.path.dirname(fileName)):
+				os.makedirs(os.path.dirname(fileName))
+
+			fileData = self.parse_file(file)
+			fileWrite = open(fileName, "wb")
+			fileWrite.write(fileData)
+			fileWrite.close()
+
 	def check(self):
 		self.parse_header()
 		self.parse_table()
+
+	def extract(self):
+		self.parse_header()
+		self.parse_table()
+		self.parse_files()
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument("-c", "--check",
 		help="check CHECK for integrity (as per reverse-engineered specification)",
 		nargs="+")
+	parser.add_argument("-x", "--extract",
+		help="extract files from an EXTRACT archive",
+		nargs="?")
 	parser.add_argument("-v", "--verbose",
 		help="verbose mode ON",
 		action="store_true")
 	args = parser.parse_args()
 
-	if not args.check:
+	if not (args.check or args.extract):
 		parser.print_help()
 		sys.exit(1)
 
-	for fileName in args.check:
-		try:
-			cbr = CBF(fileName)
-			cbr.check()
-		except FileNotFoundError as e:
-			print(e)
+	if args.check:
+		for fileName in args.check:
+			try:
+				cbr = CBF(fileName)
+				cbr.check()
+			except FileNotFoundError as e:
+				print(e)
+
+	if args.extract:
+		cbf = CBF(args.extract)
+		cbf.extract()
 

@@ -26,8 +26,11 @@ import argparse
 import struct
 import os
 import ntpath
+import logging
 
 __author__ = "Jan Havran"
+
+logging.VERBOSE = logging.DEBUG + 5
 
 class CBFFile(object):
 	def __init__(self, name, data, compressed):
@@ -93,23 +96,20 @@ class CBFArchive(object):
 
 	def parse_header(self):
 		if len(self.fileData) < CBFArchive.Header.size:
-			print(self.fileName + ": Invalid header size")
-			return None
+			raise RuntimeError("  Invalid header size")
 
 		(sig1, sig2, CBFSize, unk1, fileCnt, tableOffset, unk2, tableSize) = self.unpack("<IIIIIIII", self.fileData)
 
 		if sig1 != CBFArchive.Header.sig1 or sig2 != CBFArchive.Header.sig2:
-			print(self.fileName + ": Invalid header signature")
-			return None
-		if unk1 != 0 or unk2 != 0:
-			print(self.fileName + ": Unexpected data in header")
-			return None
-		if len(self.fileData) != CBFSize:
-			print(self.fileName + ": Invalid CBF size")
-			return None
+			raise RuntimeError("  Invalid header signature")
+
 		if tableOffset + tableSize < CBFSize:
-			print(self.fileName + ": Invalid file table location")
-			return None
+			raise RuntimeError("  Invalid file table location")
+
+		if len(self.fileData) != CBFSize:
+			logging.error("  Invalid CBF size")
+		if unk1 != 0 or unk2 != 0:
+			logging.warning("  Unexpected data in header")
 
 		return (fileCnt, self.fileData[tableOffset:tableOffset + tableSize])
 
@@ -119,14 +119,16 @@ class CBFArchive(object):
 
 		while pos < len(fileTable):
 			if pos + 2 > len(fileTable):
-				print(self.fileName + ": Corrupted item size in file table")
-				return
+				logging.error("  Corrupted item size in file table")
+				break
+
 			(itemSize, ) = self.unpack("<H",fileTable[pos:])
 			pos += 2
 
 			if pos + itemSize > len(fileTable):
-				print(self.fileName + ": Corrupted item in file table")
-				return
+				logging.error("  Corrupted item in file table")
+				break
+
 			itemData = self.decrypt(fileTable[pos:pos+itemSize])
 			pos += itemSize
 
@@ -135,8 +137,8 @@ class CBFArchive(object):
 
 			(fileName, ) = self.unpack("<" + str(itemSize - 40) + "s", itemData[40:])
 			if fileName[-1] != 0x0:
-				print(self.fileName + ": Corrupted item name in file table")
-				return
+				logging.error("  Corrupted item name in file table")
+				break
 			fileName = str(fileName, 'windows-1250').strip(chr(0))
 
 			file = CBFFile(fileName, self.fileData[fileOffset:fileOffset + fileSize], fileCompress)
@@ -146,8 +148,11 @@ class CBFArchive(object):
 
 	def parse_files(self, fileList):
 		for file in fileList:
+			logging.log(logging.VERBOSE, "  inflating: " + file.basename)
+
 			fileDir = os.path.join(*file.dirname)
 			filePath = os.path.join(fileDir, file.basename)
+
 			if not os.path.exists(fileDir):
 				os.makedirs(fileDir)
 
@@ -165,7 +170,23 @@ class CBFArchive(object):
 		fileList = self.parse_table(fileTable)
 		self.parse_files(fileList)
 
+def processFile(fileName, extract):
+	logging.info("Archive: " + fileName)
+	try:
+		data = open(fileName, "rb").read()
+		cbf = CBFArchive(fileName, data)
+		if extract:
+			cbf.extract()
+		else:
+			cbf.check()
+	except FileNotFoundError as e:
+		logging.error(e)
+	except RuntimeError as e:
+		logging.error(e)
+
 if __name__ == "__main__":
+	level = logging.INFO
+
 	parser = argparse.ArgumentParser()
 	parser.add_argument("-c", "--check",
 		help="check CHECK for integrity (as per reverse-engineered specification)",
@@ -178,21 +199,20 @@ if __name__ == "__main__":
 		action="store_true")
 	args = parser.parse_args()
 
+
+	if args.verbose:
+		level = logging.VERBOSE
+
+	logging.basicConfig(level=level, format="%(message)s")
+
 	if not (args.check or args.extract):
 		parser.print_help()
 		sys.exit(1)
 
 	if args.check:
 		for fileName in args.check:
-			try:
-				data = open(fileName, "rb").read()
-				cbf = CBFArchive(fileName, data)
-				cbf.check()
-			except FileNotFoundError as e:
-				print(e)
+			processFile(fileName, False)
 
 	if args.extract:
-		data = open(args.extract, "rb").read()
-		cbf = CBFArchive(args.extract, data)
-		cbf.extract()
+		processFile(args.extract, True)
 

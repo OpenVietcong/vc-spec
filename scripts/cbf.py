@@ -28,19 +28,45 @@ import os
 
 __author__ = "Jan Havran"
 
-class CBF(object):
-	fileData  = []
-	fileTable = []
-	fileList  = []
+class CBFFile(object):
+	def __init__(self, name, data, compressed):
+		self.name = name
+		self.data = data
+		self.compressed = compressed
 
+	def decompress(self):
+		return bytes(0)
+
+	def decrypt(self):
+		encryptedFile = self.data
+		fileLength = len(encryptedFile)
+		decryptedFile = bytearray(fileLength)
+
+		key = fileLength & 0xFF
+		for pos in range(fileLength):
+			encryptedByte = encryptedFile[pos]
+			decryptedByte = ((encryptedByte + 0xA6 + key) & 0xFF) ^ key
+			decryptedFile[pos] = decryptedByte
+
+		return bytes(decryptedFile)
+
+	def extractData(self):
+		if self.compressed:
+			extracted = self.decompress()
+		else:
+			extracted = self.decrypt()
+
+		return extracted
+
+class CBFArchive(object):
 	class Header:
 		size = 0x20
 		sig1 = 0x46474942	# BIGF
 		sig2 = 0x4C425A01	# ZBL\1
 		
-	def __init__(self, fileName):
-		self.fileName = fileName
-		self.fileData = open(fileName, "rb").read()
+	def __init__(self, name, data):
+		self.fileName = name
+		self.fileData = data
 
 	def unpack(self, fmt, data):
 		st_fmt = fmt
@@ -49,7 +75,7 @@ class CBF(object):
 
 		return st_unpack(data[:st_len])
 
-	def decryptTableItem(self, encryptedItem):
+	def decrypt(self, encryptedItem):
 		lookUpTable = [0x32, 0xF3, 0x1E, 0x06, 0x45, 0x70, 0x32, 0xAA, 0x55, 0x3F, 0xF1, 0xDE, 0xA3, 0x44, 0x21, 0xB4]
 		itemLength = len(encryptedItem)
 		decryptedItem = bytearray(itemLength)
@@ -63,26 +89,14 @@ class CBF(object):
 
 		return bytes(decryptedItem)
 
-	def decryptFile(self, encryptedFile):
-		fileLength = len(encryptedFile)
-		decryptedFile = bytearray(fileLength)
-
-		key = fileLength & 0xFF
-		for pos in range(fileLength):
-			encryptedByte = encryptedFile[pos]
-			decryptedByte = ((encryptedByte + 0xA6 + key) & 0xFF) ^ key
-			decryptedFile[pos] = decryptedByte
-
-		return bytes(decryptedFile)
-
 	def parse_header(self):
-		if len(self.fileData) < CBF.Header.size:
+		if len(self.fileData) < CBFArchive.Header.size:
 			print(self.fileName + ": Invalid header size")
 			return None
 
 		(sig1, sig2, CBFSize, unk1, fileCnt, tableOffset, unk2, tableSize) = self.unpack("<IIIIIIII", self.fileData)
 
-		if sig1 != CBF.Header.sig1 or sig2 != CBF.Header.sig2:
+		if sig1 != CBFArchive.Header.sig1 or sig2 != CBFArchive.Header.sig2:
 			print(self.fileName + ": Invalid header signature")
 			return None
 		if unk1 != 0 or unk2 != 0:
@@ -95,24 +109,23 @@ class CBF(object):
 			print(self.fileName + ": Invalid file table location")
 			return None
 
-		self.fileTable = self.fileData[tableOffset:tableOffset + tableSize]
+		return (fileCnt, self.fileData[tableOffset:tableOffset + tableSize])
 
-		return fileCnt
-
-	def parse_table(self):
+	def parse_table(self, fileTable):
+		fileList = []
 		pos = 0
 
-		while pos < len(self.fileTable):
-			if pos + 2 > len(self.fileTable):
+		while pos < len(fileTable):
+			if pos + 2 > len(fileTable):
 				print(self.fileName + ": Corrupted item size in file table")
 				return
-			(itemSize, ) = self.unpack("<H", self.fileTable[pos:])
+			(itemSize, ) = self.unpack("<H",fileTable[pos:])
 			pos += 2
 
-			if pos + itemSize > len(self.fileTable):
+			if pos + itemSize > len(fileTable):
 				print(self.fileName + ": Corrupted item in file table")
 				return
-			itemData = self.decryptTableItem(self.fileTable[pos:pos+itemSize])
+			itemData = self.decrypt(fileTable[pos:pos+itemSize])
 			pos += itemSize
 
 			(fileOffset, unk1, unk2, unk3, unk4) = self.unpack("<I4I", itemData)
@@ -124,35 +137,30 @@ class CBF(object):
 				return
 			fileName = str(fileName, 'windows-1250').strip(chr(0))
 
-			self.fileList.append((fileName, self.fileData[fileOffset:fileOffset + fileSize], fileCompress))
-		return None
+			file = CBFFile(fileName, self.fileData[fileOffset:fileOffset + fileSize], fileCompress)
+			fileList.append(file)
 
-	def parse_file(self, file):
-		parsed_file = bytes(0)
-		if not file[2]:
-			parsed_file = self.decryptFile(file[1])
+		return fileList
 
-		return parsed_file
-
-	def parse_files(self):
-		for file in self.fileList:
-			fileName = file[0].replace("\\", "/")
+	def parse_files(self, fileList):
+		for file in fileList:
+			fileName = file.name.replace("\\", "/")
 			if not os.path.exists(os.path.dirname(fileName)):
 				os.makedirs(os.path.dirname(fileName))
 
-			fileData = self.parse_file(file)
+			fileData = file.extractData()
 			fileWrite = open(fileName, "wb")
 			fileWrite.write(fileData)
 			fileWrite.close()
 
 	def check(self):
-		self.parse_header()
-		self.parse_table()
+		(fileCnt, fileTable) = self.parse_header()
+		fileList = self.parse_table(fileTable)
 
 	def extract(self):
-		self.parse_header()
-		self.parse_table()
-		self.parse_files()
+		(fileCnt, fileTable) = self.parse_header()
+		fileList = self.parse_table(fileTable)
+		self.parse_files(fileList)
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
@@ -174,12 +182,14 @@ if __name__ == "__main__":
 	if args.check:
 		for fileName in args.check:
 			try:
-				cbr = CBF(fileName)
-				cbr.check()
+				data = open(fileName, "rb").read()
+				cbf = CBFArchive(fileName, data)
+				cbf.check()
 			except FileNotFoundError as e:
 				print(e)
 
 	if args.extract:
-		cbf = CBF(args.extract)
+		data = open(args.extract, "rb").read()
+		cbf = CBFArchive(args.extract, data)
 		cbf.extract()
 

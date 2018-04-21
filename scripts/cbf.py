@@ -25,12 +25,14 @@ import sys
 import argparse
 import struct
 import os
+import ntpath
 
 __author__ = "Jan Havran"
 
 class CBFFile(object):
 	def __init__(self, name, data, compressed):
-		self.name = name
+		self.basename = ntpath.basename(name)
+		self.dirname  = ntpath.dirname(name).split("\\")
 		self.data = data
 		self.compressed = compressed
 
@@ -144,12 +146,13 @@ class CBFArchive(object):
 
 	def parse_files(self, fileList):
 		for file in fileList:
-			fileName = file.name.replace("\\", "/")
-			if not os.path.exists(os.path.dirname(fileName)):
-				os.makedirs(os.path.dirname(fileName))
+			fileDir = os.path.join(*file.dirname)
+			filePath = os.path.join(fileDir, file.basename)
+			if not os.path.exists(fileDir):
+				os.makedirs(fileDir)
 
 			fileData = file.extractData()
-			fileWrite = open(fileName, "wb")
+			fileWrite = open(filePath, "wb")
 			fileWrite.write(fileData)
 			fileWrite.close()
 

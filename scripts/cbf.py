@@ -33,6 +33,9 @@ __author__ = "Jan Havran"
 logging.VERBOSE = logging.DEBUG + 5
 
 class CBFFile(object):
+	class Header:
+		sig = 0x5D2E2E5B
+
 	def __init__(self, name, data, compressed):
 		self.basename = ntpath.basename(name)
 		self.dirname  = ntpath.dirname(name).split("\\")
@@ -40,6 +43,10 @@ class CBFFile(object):
 		self.compressed = compressed
 
 	def decompress(self):
+		(sig, unk1, unk2) = unpack("<III", self.data)
+
+		if sig != CBFFile.Header.sig:
+			raise RuntimeError("    Invalid header signature")
 		return bytes(0)
 
 	def decrypt(self):
@@ -56,12 +63,18 @@ class CBFFile(object):
 		return bytes(decryptedFile)
 
 	def extractData(self):
-		if self.compressed:
-			extracted = self.decompress()
-		else:
-			extracted = self.decrypt()
+		extractedData = bytes()
 
-		return extracted
+		if   self.compressed == 0:
+			logging.log(logging.VERBOSE, "  extracting: " + self.basename)
+			extractedData = self.decrypt()
+		elif self.compressed == 1:
+			logging.log(logging.VERBOSE, "  inflating:  " + self.basename)
+			extractedData = self.decompress()
+		else:
+			logging.error("    skipping (Unknown compression method): " + self.basename)
+
+		return extractedData
 
 class CBFArchive(object):
 	class Header:
@@ -72,13 +85,6 @@ class CBFArchive(object):
 	def __init__(self, name, data):
 		self.fileName = name
 		self.fileData = data
-
-	def unpack(self, fmt, data):
-		st_fmt = fmt
-		st_len = struct.calcsize(st_fmt)
-		st_unpack = struct.Struct(st_fmt).unpack_from
-
-		return st_unpack(data[:st_len])
 
 	def decrypt(self, encryptedItem):
 		lookUpTable = [0x32, 0xF3, 0x1E, 0x06, 0x45, 0x70, 0x32, 0xAA, 0x55, 0x3F, 0xF1, 0xDE, 0xA3, 0x44, 0x21, 0xB4]
@@ -98,7 +104,7 @@ class CBFArchive(object):
 		if len(self.fileData) < CBFArchive.Header.size:
 			raise RuntimeError("  Invalid header size")
 
-		(sig1, sig2, CBFSize, unk1, fileCnt, tableOffset, unk2, tableSize) = self.unpack("<IIIIIIII", self.fileData)
+		(sig1, sig2, CBFSize, unk1, fileCnt, tableOffset, unk2, tableSize) = unpack("<IIIIIIII", self.fileData)
 
 		if sig1 != CBFArchive.Header.sig1 or sig2 != CBFArchive.Header.sig2:
 			raise RuntimeError("  Invalid header signature")
@@ -122,7 +128,7 @@ class CBFArchive(object):
 				logging.error("  Corrupted item size in file table")
 				break
 
-			(itemSize, ) = self.unpack("<H",fileTable[pos:])
+			(itemSize, ) = unpack("<H",fileTable[pos:])
 			pos += 2
 
 			if pos + itemSize > len(fileTable):
@@ -132,10 +138,10 @@ class CBFArchive(object):
 			itemData = self.decrypt(fileTable[pos:pos+itemSize])
 			pos += itemSize
 
-			(fileOffset, unk1, unk2, unk3, unk4) = self.unpack("<I4I", itemData)
-			(fileSize, unk5, unk6, fileCompress, unk7) = self.unpack("<I2II1I", itemData[20:])
+			(fileOffset, unk1, unk2, unk3, unk4) = unpack("<I4I", itemData)
+			(fileSize, unk5, unk6, fileCompress, unk7) = unpack("<I2II1I", itemData[20:])
 
-			(fileName, ) = self.unpack("<" + str(itemSize - 40) + "s", itemData[40:])
+			(fileName, ) = unpack("<" + str(itemSize - 40) + "s", itemData[40:])
 			if fileName[-1] != 0x0:
 				logging.error("  Corrupted item name in file table")
 				break
@@ -148,8 +154,6 @@ class CBFArchive(object):
 
 	def parse_files(self, fileList):
 		for file in fileList:
-			logging.log(logging.VERBOSE, "  inflating: " + file.basename)
-
 			fileDir = os.path.join(*file.dirname)
 			filePath = os.path.join(fileDir, file.basename)
 
@@ -169,6 +173,13 @@ class CBFArchive(object):
 		(fileCnt, fileTable) = self.parse_header()
 		fileList = self.parse_table(fileTable)
 		self.parse_files(fileList)
+
+def unpack(fmt, data):
+		st_fmt = fmt
+		st_len = struct.calcsize(st_fmt)
+		st_unpack = struct.Struct(st_fmt).unpack_from
+
+		return st_unpack(data[:st_len])
 
 def processFile(fileName, extract):
 	logging.info("Archive: " + fileName)

@@ -32,10 +32,97 @@ __author__ = "Jan Havran"
 
 logging.VERBOSE = logging.DEBUG + 5
 
-class CBFFile(object):
+class LZW(object):
 	class Header:
-		sig = 0x5D2E2E5B
+		sig = 0x5D2E2E5B	# "[..]"
 
+	class Default:
+		ptrRoot = 0xFFFFFFFF
+		dictWidth = 8
+
+	def __init__(self, data):
+		self.LZWDict = []
+		self.data = data
+		self.dictWidth = LZW.Default.dictWidth
+		self.codeEnd = (1 << self.dictWidth)
+		self.codeMax = (1 << self.dictWidth) - 1
+		self.dataPos = 0
+
+		logging.debug("Initializing LZW dictionary")
+		for row in range(self.codeEnd):
+			self.appendRow(LZW.Default.ptrRoot, row)
+		self.appendRow(LZW.Default.ptrRoot, self.codeEnd)
+
+	def getDictRowLen(self, key, len = 0):
+		if self.LZWDict[key][0] != LZW.Default.ptrRoot:
+			len = self.getDictRowLen(self.LZWDict[key][0], len)
+
+		return len + 1
+
+	def appendRow(self, ptr, val):
+		self.LZWDict.append((ptr, val))
+
+		if len(self.LZWDict) >= self.codeMax:
+			self.dictWidth += 1
+			self.codeMax = (1 << self.dictWidth) - 1
+			logging.debug("Dictionary key width extended to {} bits".format(self.dictWidth))
+			if self.dictWidth == 33:
+				logging.error("LZW key width exceeded 32 bits")
+
+	def getKeyFromStream(self):
+		dataPosB = self.dataPos // 8
+		b0 = self.data[dataPosB + 0] & 0xFF
+		b1 = 0x00 if dataPosB + 1 >=  len(self.data) else self.data[dataPosB + 1] & 0xFF
+		b2 = 0x00 if dataPosB + 2 >=  len(self.data) else self.data[dataPosB + 2] & 0xFF
+		b3 = 0x00 if dataPosB + 3 >=  len(self.data) else self.data[dataPosB + 3] & 0xFF
+
+		word = (b0 << 0) | (b1 << 8) | (b2 << 16) | (b3 << 24)
+		key = word >> (self.dataPos % 8)
+		key = key & self.codeMax
+
+		self.dataPos += self.dictWidth
+
+		return key
+
+	def getValFromDict(self, key, index):
+		result = -1
+
+		if self.LZWDict[key][0] == LZW.Default.ptrRoot:
+			iter = index
+		else:
+			(iter, result) = self.getValFromDict(self.LZWDict[key][0], index)
+
+		if iter == 0:
+			result = self.LZWDict[key][1]
+
+		return (iter - 1, result)
+
+	def decompress(self):
+		data = bytearray(0)
+		keyPrev = LZW.Default.ptrRoot
+
+		keyCurr = self.getKeyFromStream()
+		while keyCurr != self.codeEnd:
+			if keyPrev != LZW.Default.ptrRoot:
+				if keyCurr < len(self.LZWDict):
+					val = self.getValFromDict(keyCurr, 0)[1]
+				elif keyCurr == len(self.LZWDict):
+					val = self.getValFromDict(keyPrev, 0)[1]
+				else:
+					raise RuntimeError("    LZW: invalid key")
+
+				self.appendRow(keyPrev, val)
+
+			for index in range(self.getDictRowLen(keyCurr)):
+				val = self.getValFromDict(keyCurr, index)
+				data.append(self.getValFromDict(keyCurr, index)[1])
+
+			keyPrev = keyCurr
+			keyCurr = self.getKeyFromStream()
+
+		return bytes(data)
+
+class CBFFile(object):
 	def __init__(self, name, size, data, compressed):
 		self.basename = ntpath.basename(name)
 		self.dirname  = ntpath.dirname(name).split("\\")
@@ -44,11 +131,33 @@ class CBFFile(object):
 		self.compressed = compressed
 
 	def decompress(self):
-		(sig, unk1, unk2) = unpack("<III", self.data)
+		dataPtr = 0
+		fileDecompressed = bytearray(0)
 
-		if sig != CBFFile.Header.sig:
-			raise RuntimeError("    Invalid header signature")
-		return bytes(0)
+		while dataPtr + 12 < len(self.data):
+			(sig, blockCompressedSize, blockDecompressedSize) = unpack("<III", self.data[dataPtr:])
+			dataPtr += 12
+
+			if sig != LZW.Header.sig:
+				raise RuntimeError("    LZW: Invalid header signature")
+
+			if len(self.data[dataPtr:]) < blockCompressedSize:
+				raise RuntimeError("    LZW: not enough data in LZW block")
+
+			blockCompressed = self.data[dataPtr:dataPtr+blockCompressedSize]
+			lzw = LZW(blockCompressed)
+			blockDecompressed = lzw.decompress()
+
+			if len(blockDecompressed) != blockDecompressedSize:
+				logging.error("    LZW: Invalid size of decompressed LZW block")
+
+			fileDecompressed += blockDecompressed
+			dataPtr += blockCompressedSize
+
+		if dataPtr != len(self.data):
+			logging.error("    LZW: invalid size of compressed file")
+
+		return bytes(fileDecompressed)
 
 	def decrypt(self):
 		encryptedFile = self.data

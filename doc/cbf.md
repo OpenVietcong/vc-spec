@@ -74,3 +74,30 @@ Otherwise zero.
 Length of the string can be calculated as "Descriptor size - 40".
 Uses windows-1250 encoding.
 
+Files
+=====
+
+Files stored in CBF archive can be either encrypted or compressed.
+
+Encrypted files
+---------------
+
+Compressed files
+----------------
+
+Compression is based on standard LZW algorithm.
+LZW dictionary is initialized on 256 values (0-255) and end code (key 256), therefore key width is initialized on 9 bits.
+LZW dictionary does not contain clear code, instead, the compressed file is divided into several blocks, where each block is decompressed separately.
+Each block consists of its header (table below) and compressed data.
+
+| Offset | Name        | Type     |
+|--------|-------------|----------|
+| 0      | Signature   | CHAR[4]  |
+| 4      | Input size  | UINT32LE |
+| 8      | Output size | UINT32LE |
+
+1. Signature identifying LZW block.
+Contains fixed string "[..]" without NULL character at the end (0x5B 0x2E 0x2E 0x5D).
+2. Input (compressed) size of LZW block.
+3. Output (decompressed) size of LZW block.
+

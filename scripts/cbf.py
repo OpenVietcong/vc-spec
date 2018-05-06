@@ -286,31 +286,27 @@ class CBFArchive(object):
 
 		return fileList
 
-	def parse_files(self, fileList):
+	def parse_files(self, fileList, extract):
 		for file in fileList:
-			fileDir = os.path.join(*file.dirname)
-			filePath = os.path.join(fileDir, file.basename)
+			if extract:
+				fileDir = os.path.join(*file.dirname)
+				filePath = os.path.join(fileDir, file.basename)
 
-			if not os.path.exists(fileDir):
-				os.makedirs(fileDir)
+				if not os.path.exists(fileDir):
+					os.makedirs(fileDir)
 
 			fileData = file.extractData()
-			fileWrite = open(filePath, "wb")
-			fileWrite.write(fileData)
-			fileWrite.close()
+			if extract:
+				fileWrite = open(filePath, "wb")
+				fileWrite.write(fileData)
+				fileWrite.close()
 
-	def check(self):
+	def parse(self, extract):
 		(fileCnt, fileTable) = self.parse_header()
 		fileList = self.parse_table(fileTable)
 		if len(fileList) != fileCnt:
 			loggig.error("Found {} files, but CBF should contain {} files".format(len(fileList), fileCnt))
-
-	def extract(self):
-		(fileCnt, fileTable) = self.parse_header()
-		fileList = self.parse_table(fileTable)
-		if len(fileList) != fileCnt:
-			loggig.error("Found {} files, but CBF should contain {} files".format(len(fileList), fileCnt))
-		self.parse_files(fileList)
+		self.parse_files(fileList, extract)
 
 def unpack(fmt, data):
 		st_fmt = fmt
@@ -324,10 +320,7 @@ def processFile(fileName, extract):
 	try:
 		data = open(fileName, "rb").read()
 		cbf = CBFArchive(fileName, data)
-		if extract:
-			cbf.extract()
-		else:
-			cbf.check()
+		cbf.parse(extract)
 	except FileNotFoundError as e:
 		logging.error(e)
 	except RuntimeError as e:

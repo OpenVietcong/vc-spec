@@ -37,7 +37,7 @@ Total size: 4
 
 | Offset | Name            | Type     |
 |--------|-----------------|----------|
-| 0      | Descriptor size | UINT32LE |
+| 0      | Descriptor size | UINT16LE |
 
 1. Size of following descriptor
 

@@ -305,7 +305,7 @@ class CBFArchive(object):
 		(fileCnt, fileTable) = self.parse_header()
 		fileList = self.parse_table(fileTable)
 		if len(fileList) != fileCnt:
-			loggig.error("Found {} files, but CBF should contain {} files".format(len(fileList), fileCnt))
+			logging.error("Found {} files, but CBF should contain {} files".format(len(fileList), fileCnt))
 		self.parse_files(fileList, extract)
 
 def unpack(fmt, data):

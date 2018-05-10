@@ -53,11 +53,14 @@ class LZW(object):
 			self.appendRow(LZW.Default.ptrRoot, row)
 		self.appendRow(LZW.Default.ptrRoot, self.codeEnd)
 
-	def getDictRowLen(self, key, len = 0):
-		if self.LZWDict[key][0] != LZW.Default.ptrRoot:
-			len = self.getDictRowLen(self.LZWDict[key][0], len)
+	def getDictRowLen(self, key):
+		len = 1
 
-		return len + 1
+		while self.LZWDict[key][0] != LZW.Default.ptrRoot:
+			key = self.LZWDict[key][0]
+			len += 1
+
+		return len
 
 	def appendRow(self, ptr, val):
 		self.LZWDict.append((ptr, val))
@@ -85,17 +88,15 @@ class LZW(object):
 		return key
 
 	def getValFromDict(self, key, index):
-		result = -1
+		len = self.getDictRowLen(key)
 
-		if self.LZWDict[key][0] == LZW.Default.ptrRoot:
-			iter = index
-		else:
-			(iter, result) = self.getValFromDict(self.LZWDict[key][0], index)
+		pos = 0
+		while pos < len - index:
+			val = self.LZWDict[key][1]
+			key = self.LZWDict[key][0]
+			pos += 1
 
-		if iter == 0:
-			result = self.LZWDict[key][1]
-
-		return (iter - 1, result)
+		return val
 
 	def decompress(self):
 		data = bytearray(0)
@@ -105,17 +106,16 @@ class LZW(object):
 		while keyCurr != self.codeEnd:
 			if keyPrev != LZW.Default.ptrRoot:
 				if keyCurr < len(self.LZWDict):
-					val = self.getValFromDict(keyCurr, 0)[1]
+					val = self.getValFromDict(keyCurr, 0)
 				elif keyCurr == len(self.LZWDict):
-					val = self.getValFromDict(keyPrev, 0)[1]
+					val = self.getValFromDict(keyPrev, 0)
 				else:
 					raise RuntimeError("    LZW: invalid key")
 
 				self.appendRow(keyPrev, val)
 
 			for index in range(self.getDictRowLen(keyCurr)):
-				val = self.getValFromDict(keyCurr, index)
-				data.append(self.getValFromDict(keyCurr, index)[1])
+				data.append(self.getValFromDict(keyCurr, index))
 
 			keyPrev = keyCurr
 			keyCurr = self.getKeyFromStream()

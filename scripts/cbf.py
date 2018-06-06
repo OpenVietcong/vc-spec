@@ -18,7 +18,7 @@
 # ##### END GPL LICENSE BLOCK #####
 
 """
-cbf.py - util for unpacking (not compressed) CBF files and checking them for integrity
+cbf.py - util for unpacking CBF files and checking them for integrity
 """
 
 import sys

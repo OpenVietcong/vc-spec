@@ -56,7 +56,7 @@ Total size: Descriptor size
 | 20     | File size       | UINT32LE    |
 | 24     | Unknown2        | UINT32LE    |
 | 28     | Compressed size | UINT32LE    |
-| 32     | Storage type    | UINT32LE    |
+| 32     | Encoding        | UINT32LE    |
 | 36     | Unknown3        | UINR32LE    |
 | 40     | File name       | CHAR[]      |
 
@@ -66,7 +66,7 @@ Total size: Descriptor size
 4. Unknown
 5. File size in the CBF archive in case of compression as a storage method.
 Otherwise zero.
-6. Storage method - describes how is file stored in CBF archive:
+6. Encoding method - describes how is file stored in CBF archive:
   - 0x0 file is encrypted.
   - 0x1 file is compressed.
 7. Unknown.

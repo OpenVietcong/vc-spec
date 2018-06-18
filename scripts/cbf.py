@@ -225,7 +225,7 @@ class CBFArchive(object):
 		if sig1 != CBFArchive.Header.sig1 or sig2 != CBFArchive.Header.sig2:
 			raise RuntimeError("  Invalid header signature")
 
-		if tableOffset + tableSize < CBFSize:
+		if tableOffset + tableSize > CBFSize:
 			raise RuntimeError("  Invalid file table location")
 
 		if len(self.fileData) != CBFSize:

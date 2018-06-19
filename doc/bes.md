@@ -56,23 +56,24 @@ Each sub-block contain it's label, size and data itself.
 
 Here is quick reference table of known data sub-blocks:
 
-| Block Name    | Label |
-|---------------|-------|
-| Object        | 0x001 |
-| ...           | ....  |
-| Unknown 0x030 | 0x030 |
-| Mesh          | 0x031 |
-| Vertices      | 0x032 |
-| Faces         | 0x033 |
-| Properties    | 0x034 |
-| Unknown 0x035 | 0x035 |
-| Unknown 0x036 | 0x036 |
-| ...           | ...   |
-| Unknown 0x038 | 0x038 |
-| ...           | ...   |
-| User Info     | 0x070 |
-| ...           |       |
-| Unknown 0x100 | 0x100 |
+| Block Name     | Label  |
+|----------------|--------|
+| Object         | 0x0001 |
+| ...            | ...    |
+| Unknown 0x030  | 0x0030 |
+| Mesh           | 0x0031 |
+| Vertices       | 0x0032 |
+| Faces          | 0x0033 |
+| Properties     | 0x0034 |
+| Unknown 0x035  | 0x0035 |
+| Unknown 0x036  | 0x0036 |
+| ...            | ...    |
+| Unknown 0x038  | 0x0038 |
+| ...            | ...    |
+| User Info      | 0x0070 |
+| ...            | ...    |
+| Unknown 0x1000 | 0x1000 |
+| Texture        | 0x1001 |
 
 ### Object
 
@@ -268,14 +269,40 @@ Space between 'Name' and 'Comment' is filled with zeros
 6. Name (max 64)
 7. Comment
 
-### Unknown 0x100
+### Unknown 0x1000
 
-| Offset | Name      | Type     |
-|--------|-----------|----------|
-| 0      | Label     | UINT32LE |
-| 4      | Blok size | UINT32LE |
-| 8      | Unknown   | UINT32LE |
+| Offset | Name             | Type     |
+|--------|------------------|----------|
+| 0      | Label            | UINT32LE |
+| 4      | Block size       | UINT32LE |
+| 8      | Texture children | UINT32LE |
 
-1. Label of this sub-block - always 0x100
+1. Label of this sub-block - always 0x1000
+2. Size of this sub-block (including this field and label)
+3. Number of textures inside of this block
+
+Other data sub-blocks may follow. Known sub-blocks:
+* Texture
+
+### Texture
+
+| Offset | Name        | Type     |
+|--------|-------------|----------|
+| 0      | Label       | UINT32LE |
+| 4      | Block size  | UINT32LE |
+| 8      | Unknown1    | UINT32LE |
+| 12     | Unknown2    | UINT32LE |
+| 16     | Unknown3    | UINT32LE |
+| 20     | Name length | UINT32LE |
+| 24     | Unknown4    | UINT32LE |
+| 28     | Name        | CHAR[]   |
+
+1. Label of this sub-block - always 0x1001
 2. Size of this sub-block (including this field and label)
 3. Unknown
+4. Unknown
+5. Unknown
+6. Length of 'Name' string
+7. Unknown
+8. Name of texture file
+

@@ -70,30 +70,30 @@ class BES(object):
             subblock = data[start+8:start+size]
             start += size 
 
-            if   label == 0x001:
+            if   label == 0x0001:
                 self.parse_block_object(subblock, index)
-            elif label == 0x030:
+            elif label == 0x0030:
                 self.parse_block_unk30(subblock, index)
-            elif label == 0x031:
+            elif label == 0x0031:
                 self.parse_block_mesh(subblock, index)
-            elif label == 0x032:
+            elif label == 0x0032:
                 self.parse_block_vertices(subblock, index)
-            elif label == 0x033:
+            elif label == 0x0033:
                 self.parse_block_faces(subblock, index)
-            elif label == 0x034:
+            elif label == 0x0034:
                 self.parse_block_properties(subblock, index)
-            elif label == 0x035:
+            elif label == 0x0035:
                 self.parse_block_unk35(subblock, index)
-            elif label == 0x036:
+            elif label == 0x0036:
                 self.parse_block_unk36(subblock, index)
-            elif label == 0x038:
+            elif label == 0x0038:
                 self.parse_block_unk38(subblock, index)
-            elif label == 0x070:
+            elif label == 0x0070:
                 self.parse_block_user_info(subblock, index)
-            elif label == 0x100:
-                self.parse_block_unk100(subblock, index)
             elif label == 0x1000:
                 self.parse_block_unk1000(subblock, index)
+            elif label == 0x1001:
+                self.parse_block_texture(subblock, index)
             else:
                 print("Unknown block {}".format(hex(label)))
                 hex_dump(subblock, index)
@@ -161,13 +161,18 @@ class BES(object):
         (comment,) = self.unpack("<" + str(comment_size) + "s", data[76:])
         print("{}User info ({} B) - name({}): {}, comment({}): {}, unknown: {:08x}".format(" "*(index*2), len(data), name_size,
             pchar_to_string(name), comment_size, pchar_to_string(comment), unknown))
-        
-
-    def parse_block_unk100(self, data, index):
-        print("{}Unk100 ({} B)".format(" "*(index*2), len(data)))
 
     def parse_block_unk1000(self, data, index):
-        print("{}Unk1000 ({} B)".format(" "*(index*2), len(data)))
+        (children,) = self.unpack("<I", data)
+        print("{}Unk1000 ({} B) - Number of textures: {:08x}".format(" "*(index*2), len(data), children))
+
+        self.parse_data(data[4:], index + 1)
+
+    def parse_block_texture(self, data, index):
+        (unk1, unk2, unk3, name_size, unk4) = self.unpack("<IIIII", data)
+        (name,) = self.unpack("<" + str(name_size) + "s", data[20:])
+        print("{}Texture ({} B) - name({}): {}".format(" "*(index*2), len(data), name_size,
+            pchar_to_string(name)))
 
 if __name__ == "__main__":
     BES(sys.argv[1])

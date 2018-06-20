@@ -91,9 +91,11 @@ class BES(object):
             elif label == 0x0070:
                 self.parse_block_user_info(subblock, index)
             elif label == 0x1000:
-                self.parse_block_unk1000(subblock, index)
+                self.parse_block_material(subblock, index)
             elif label == 0x1001:
-                self.parse_block_texture(subblock, index)
+                self.parse_block_bitmap(subblock, index)
+            elif label == 0x1002:
+                self.parse_block_ptero_mat(subblock, index)
             else:
                 print("Unknown block {}".format(hex(label)))
                 hex_dump(subblock, index)
@@ -113,8 +115,8 @@ class BES(object):
         self.parse_data(data[4:], index + 1)
 
     def parse_block_mesh(self, data, index):
-        (mesh_id,) = self.unpack("<I", data)
-        print("{}Mesh ({} B) - ID: {:08x}".format(" "*(index*2), len(data), mesh_id))
+        (material,) = self.unpack("<I", data)
+        print("{}Mesh ({} B) - Material: {:08x}".format(" "*(index*2), len(data), material))
 
         self.parse_data(data[4:], index + 1)
 
@@ -146,7 +148,6 @@ class BES(object):
 
     def parse_block_unk35(self, data, index):
         (x, y, z) = self.unpack("<fff", data)
-
         print("{}Unk35 ({} B) - position: [{}][{}][{}]".format(" "*(index*2), len(data), x, y, z))
 
     def parse_block_unk36(self, data, index):
@@ -162,17 +163,24 @@ class BES(object):
         print("{}User info ({} B) - name({}): {}, comment({}): {}, unknown: {:08x}".format(" "*(index*2), len(data), name_size,
             pchar_to_string(name), comment_size, pchar_to_string(comment), unknown))
 
-    def parse_block_unk1000(self, data, index):
+    def parse_block_material(self, data, index):
         (children,) = self.unpack("<I", data)
-        print("{}Unk1000 ({} B) - Number of textures: {:08x}".format(" "*(index*2), len(data), children))
+        print("{}Material ({} B) - Number of materials: {:08x}".format(" "*(index*2), len(data), children))
 
         self.parse_data(data[4:], index + 1)
 
-    def parse_block_texture(self, data, index):
+    def parse_block_bitmap(self, data, index):
         (unk1, unk2, unk3, name_size, unk4) = self.unpack("<IIIII", data)
         (name,) = self.unpack("<" + str(name_size) + "s", data[20:])
-        print("{}Texture ({} B) - name({}): {}".format(" "*(index*2), len(data), name_size,
+        print("{}Bitmap ({} B) - name({}): {}".format(" "*(index*2), len(data), name_size,
             pchar_to_string(name)))
+
+    def parse_block_ptero_mat(self, data, index):
+        (unk1, unk2, unk3, unk4, unk5) = self.unpack("<II4sI4s", data)
+        (name_size,) = self.unpack("<I", data[20:])
+        (name,) = self.unpack("<" + str(name_size) + "s", data[24:])
+        print("{}PteroMat ({} B) - name({}): {}, collision material: '{}{}', grow type: '{}', grass type: '{}'".format(
+            " "*(index*2), len(data), name_size, pchar_to_string(name), chr(unk3[0]), chr(unk3[1]), chr(unk5[0]), chr(unk5[1])))
 
 if __name__ == "__main__":
     BES(sys.argv[1])

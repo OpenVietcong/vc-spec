@@ -72,8 +72,9 @@ Here is quick reference table of known data sub-blocks:
 | ...            | ...    |
 | User Info      | 0x0070 |
 | ...            | ...    |
-| Unknown 0x1000 | 0x1000 |
-| Texture        | 0x1001 |
+| Material       | 0x1000 |
+| Bitmap         | 0x1001 |
+| PteroMat       | 0x1002 |
 
 ### Object
 
@@ -87,14 +88,14 @@ Here is quick reference table of known data sub-blocks:
 
 1. Label of this sub-block - always 0x001
 2. Size of this sub-block (including this field and label)
-3. Number of children objects inside of this one
+3. Number of 'Object' sub-blocks inside of this one
 4. Length of 'Name' string
 5. Name
 
 Other data sub-blocks may follow. Known sub-blocks:
 * Object
 * Unknown 0x030
-* Unknown 0x100
+* Material
 
 ### Unknown 0x030
 
@@ -120,11 +121,12 @@ Other data sub-blocks may follow. Known sub-blocks:
 |--------|-----------|----------|
 | 0      | Label     | UINT32LE |
 | 4      | Blok size | UINT32LE |
-| 8      | Mesh ID   | UINT32LE |
+| 8      | Material  | UINT32LE |
 
 1. Label of this sub-block - always 0x031
 2. Size of this sub-block (including this field and label)
-3. ID usually in interval <0;total-meshes) or 0xFFFFFFFF
+3. Material ID (popints to the one of children of 'Material' data block) used by this mesh.
+Value 0xFFFFFFFF if no material is used.
 
 Other data sub-blocks may follow. Known sub-blocks:
 * Vertices
@@ -164,7 +166,7 @@ Vertices data structures follows:
 
 This block contains object faces.
 Every face is made of 3 vertices (a, b, c).
-Vertex value points to vertex ID in Vertices data block.
+Vertex value points to vertex ID in 'Vertices' data block.
 
 | Offset | Name        | Type     |
 |--------|-------------|----------|
@@ -269,22 +271,23 @@ Space between 'Name' and 'Comment' is filled with zeros
 6. Name (max 64)
 7. Comment
 
-### Unknown 0x1000
+### Material
 
-| Offset | Name             | Type     |
-|--------|------------------|----------|
-| 0      | Label            | UINT32LE |
-| 4      | Block size       | UINT32LE |
-| 8      | Texture children | UINT32LE |
+| Offset | Name              | Type     |
+|--------|-------------------|----------|
+| 0      | Label             | UINT32LE |
+| 4      | Block size        | UINT32LE |
+| 8      | Material children | UINT32LE |
 
 1. Label of this sub-block - always 0x1000
 2. Size of this sub-block (including this field and label)
-3. Number of textures inside of this block
+3. Number of materials inside of this block
 
 Other data sub-blocks may follow. Known sub-blocks:
-* Texture
+* Bitmap
+* PteroMat
 
-### Texture
+### Bitmap
 
 | Offset | Name        | Type     |
 |--------|-------------|----------|
@@ -294,7 +297,7 @@ Other data sub-blocks may follow. Known sub-blocks:
 | 12     | Unknown2    | UINT32LE |
 | 16     | Unknown3    | UINT32LE |
 | 20     | Name length | UINT32LE |
-| 24     | Unknown4    | UINT32LE |
+| 24     | Coordinates | UINT32LE |
 | 28     | Name        | CHAR[]   |
 
 1. Label of this sub-block - always 0x1001
@@ -303,6 +306,37 @@ Other data sub-blocks may follow. Known sub-blocks:
 4. Unknown
 5. Unknown
 6. Length of 'Name' string
-7. Unknown
-8. Name of texture file
+7. Coordinates configuration bitfield.
+Tile and mirror can not be used at the same time.
+  *  0 - U tile
+  *  1 - V tile
+  *  2 - U mirror
+  *  3 - V mirror
+8. Name of bitmap file
+
+### PteroMat
+
+| Offset | Name        | Type     |
+|--------|-------------|----------|
+| 0      | Label       | UINT32LE |
+| 4      | Block size  | UINT32LE |
+| 8      | Unknown1    | UINT32LE |
+| 12     | Unknown2    | UINT32LE |
+| 16     | Unknown3    | CHAR[4]  |
+| 20     | Unknown4    | UINT32LE |
+| 24     | Unknown5    | CHAR[4]  |
+| 28     | Name length | UINT32LE |
+| 32     | Name        | CHAR[]   |
+
+Some other data may follow.
+
+1. Label of this sub-block - always 0x1002
+2. Size of this sub-block (including this field and label)
+3. Unknown
+4. Unknown
+5. Collision Material
+6. Unknown
+7. Grow/Grass Type
+8. Length of 'Name' string
+9. Name of bitmap file
 

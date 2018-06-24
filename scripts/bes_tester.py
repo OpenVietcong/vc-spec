@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # ##### BEGIN GPL LICENSE BLOCK #####
 #
 #  This program is free software; you can redistribute it and/or
@@ -15,9 +17,16 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
+"""
+bes_tester.py - util for checking BES files for integrity
+"""
+
 import sys
+import argparse
 import os
 import struct
+
+__author__ = "Jan Havran"
 
 def hex_dump(data, index):
 	for i in range(len(data)):
@@ -183,5 +192,15 @@ class BES(object):
 			" "*(index*2), len(data), name_size, pchar_to_string(name), chr(unk3[0]), chr(unk3[1]), chr(unk5[0]), chr(unk5[1])))
 
 if __name__ == "__main__":
-	BES(sys.argv[1])
+	parser = argparse.ArgumentParser()
+	parser.add_argument("-c", "--check",
+		help="check CHECK for integrity (as per reverse-engineered specification)",
+		nargs="?")
+	args = parser.parse_args()
+
+	if args.check:
+		BES(args.check)
+	else:
+		parser.print_help()
+		sys.exit(1)
 

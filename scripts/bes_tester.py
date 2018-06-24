@@ -25,8 +25,11 @@ import sys
 import argparse
 import os
 import struct
+import logging
 
 __author__ = "Jan Havran"
+
+logging.VERBOSE = logging.DEBUG + 5
 
 def hex_dump(data, index):
 	for i in range(len(data)):
@@ -106,99 +109,123 @@ class BES(object):
 			elif label == 0x1002:
 				self.parse_block_ptero_mat(subblock, index)
 			else:
-				print("Unknown block {}".format(hex(label)))
+				logging.warning("Unknown block {}".format(hex(label)))
 				hex_dump(subblock, index)
 
 	def parse_block_object(self, data, index):
 		(children, name_size) = self.unpack("<II", data)
 		(name,) = self.unpack("<" + str(name_size) + "s", data[8:])
-		print("{}Object ({} B) - children: {}, name({}): {}".format(" "*(index*2), len(data), children, name_size,
-			pchar_to_string(name)))
+		logging.log(logging.VERBOSE, "{}Object ({} B) - children: {}, name({}): {}".format(
+			" "*(index*2), len(data), children, name_size,	pchar_to_string(name)))
 
 		self.parse_data(data[8+name_size:], index + 1)
 
 	def parse_block_unk30(self, data, index):
 		(children,) = self.unpack("<I", data)
-		print("{}Unk30 ({} B) - Number of meshes: {:08x}".format(" "*(index*2), len(data), children))
+		logging.log(logging.VERBOSE, "{}Unk30 ({} B) - Number of meshes: {:08x}".format(
+			" "*(index*2), len(data), children))
 
 		self.parse_data(data[4:], index + 1)
 
 	def parse_block_mesh(self, data, index):
 		(material,) = self.unpack("<I", data)
-		print("{}Mesh ({} B) - Material: {:08x}".format(" "*(index*2), len(data), material))
+		logging.log(logging.VERBOSE, "{}Mesh ({} B) - Material: {:08x}".format(
+			" "*(index*2), len(data), material))
 
 		self.parse_data(data[4:], index + 1)
 
 	def parse_block_vertices(self, data, index):
 		(count, size, unknown) = self.unpack("<III", data)
 
-		print("{}Vertices ({} B) - count: {}, size: {}, unknown: {:08x}".format(" "*(index*2), len(data), count, size, unknown))
+		logging.log(logging.VERBOSE, "{}Vertices ({} B) - count: {}, size: {}, unknown: {:08x}".format(
+			" "*(index*2), len(data), count, size, unknown))
 
 		if size < 12:
-			print("Unsupported size '{}' of vertex struct".format(size))
+			logging.error("Unsupported size '{}' of vertex struct".format(size))
 		if len(data[12:]) != size * count:
-			print("Block size do not match")
+			logging.error("Block size do not match")
 
 	def parse_block_faces(self, data, index):
 		(count, ) = self.unpack("<I", data)
 
-		print("{}Faces ({} B) - count: {}".format(" "*(index*2), len(data), count))
+		logging.log(logging.VERBOSE, "{}Faces ({} B) - count: {}".format(
+			" "*(index*2), len(data), count))
 
 		if len(data[4:]) != count * 12:
-			print("Block size do not match")
+			logging.error("Block size do not match")
 
 	def parse_block_properties(self, data, index):
 		(count, ) = self.unpack("<I", data)
 		(prop,) = self.unpack("<" + str(count) + "s", data[4:])
-		print("{}Properties ({} B): {}".format(" "*(index*2), len(data), pchar_to_string(prop)))
+		logging.log(logging.VERBOSE, "{}Properties ({} B): {}".format(
+			" "*(index*2), len(data), pchar_to_string(prop)))
 
 		if count + 4 != len(data):
-			print("Block size do not match: {} vs {}".format(len(data), count))
+			logging.error("Block size do not match: {} vs {}".format(len(data), count))
 
 	def parse_block_unk35(self, data, index):
 		(x, y, z) = self.unpack("<fff", data)
-		print("{}Unk35 ({} B) - position: [{}][{}][{}]".format(" "*(index*2), len(data), x, y, z))
+		logging.log(logging.VERBOSE, "{}Unk35 ({} B) - position: [{}][{}][{}]".format(
+			" "*(index*2), len(data), x, y, z))
 
 	def parse_block_unk36(self, data, index):
-		print("{}Unk36 ({} B)".format(" "*(index*2), len(data)))
+		logging.log(logging.VERBOSE, "{}Unk36 ({} B)".format(
+			" "*(index*2), len(data)))
 
 	def parse_block_unk38(self, data, index):
-		print("{}Unk38 ({} B)".format(" "*(index*2), len(data)))
+		logging.log(logging.VERBOSE, "{}Unk38 ({} B)".format(
+			" "*(index*2), len(data)))
 
 	def parse_block_user_info(self, data, index):
 		(name_size, comment_size, unknown) = self.unpack("<III", data)
 		(name,) = self.unpack("<" + str(name_size) + "s", data[12:])
 		(comment,) = self.unpack("<" + str(comment_size) + "s", data[76:])
-		print("{}User info ({} B) - name({}): {}, comment({}): {}, unknown: {:08x}".format(" "*(index*2), len(data), name_size,
-			pchar_to_string(name), comment_size, pchar_to_string(comment), unknown))
+		logging.log(logging.VERBOSE,
+			"{}User info ({} B) - name({}): {}, comment({}): {}, unknown: {:08x}".format(
+				" "*(index*2), len(data), name_size, pchar_to_string(name),
+				comment_size, pchar_to_string(comment), unknown))
 
 	def parse_block_material(self, data, index):
 		(children,) = self.unpack("<I", data)
-		print("{}Material ({} B) - Number of materials: {:08x}".format(" "*(index*2), len(data), children))
+		logging.log(logging.VERBOSE, "{}Material ({} B) - Number of materials: {:08x}".format(
+			" "*(index*2), len(data), children))
 
 		self.parse_data(data[4:], index + 1)
 
 	def parse_block_bitmap(self, data, index):
 		(unk1, unk2, unk3, name_size, unk4) = self.unpack("<IIIII", data)
 		(name,) = self.unpack("<" + str(name_size) + "s", data[20:])
-		print("{}Bitmap ({} B) - name({}): {}".format(" "*(index*2), len(data), name_size,
-			pchar_to_string(name)))
+		logging.log(logging.VERBOSE, "{}Bitmap ({} B) - name({}): {}".format(
+			" "*(index*2), len(data), name_size, pchar_to_string(name)))
 
 	def parse_block_ptero_mat(self, data, index):
 		(unk1, unk2, unk3, unk4, unk5) = self.unpack("<II4sI4s", data)
 		(name_size,) = self.unpack("<I", data[20:])
 		(name,) = self.unpack("<" + str(name_size) + "s", data[24:])
-		print("{}PteroMat ({} B) - name({}): {}, collision material: '{}{}', grow type: '{}', grass type: '{}'".format(
-			" "*(index*2), len(data), name_size, pchar_to_string(name), chr(unk3[0]), chr(unk3[1]), chr(unk5[0]), chr(unk5[1])))
+		logging.log(logging.VERBOSE,
+			"{}PteroMat ({} B) - name({}): {}, collision material: '{}{}', grow type: '{}', grass type: '{}'".format(
+			" "*(index*2), len(data), name_size, pchar_to_string(name), chr(unk3[0]),
+			chr(unk3[1]), chr(unk5[0]), chr(unk5[1])))
 
 if __name__ == "__main__":
+	level = logging.INFO
+
 	parser = argparse.ArgumentParser()
 	parser.add_argument("-c", "--check",
 		help="check CHECK for integrity (as per reverse-engineered specification)",
 		nargs="?")
+	parser.add_argument("-v", "--verbose",
+		help="verbose mode ON",
+		action="store_true")
 	args = parser.parse_args()
 
+	if args.verbose:
+		level = logging.VERBOSE
+
+	logging.basicConfig(level=level, format="%(message)s")
+
 	if args.check:
+		logging.info("Model: " + args.check)
 		BES(args.check)
 	else:
 		parser.print_help()

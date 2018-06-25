@@ -34,7 +34,7 @@ logging.VERBOSE = logging.DEBUG + 5
 
 class LZW(object):
 	class Header:
-		sig = 0x5D2E2E5B	# "[..]"
+		sig = b'[..]'
 
 	class Default:
 		ptrRoot = 0xFFFFFFFF
@@ -135,7 +135,7 @@ class CBFFile(object):
 		fileDecompressed = bytearray(0)
 
 		while dataPtr + 12 < len(self.data):
-			(sig, blockCompressedSize, blockDecompressedSize) = unpack("<III", self.data[dataPtr:])
+			(sig, blockCompressedSize, blockDecompressedSize) = unpack("<4sII", self.data[dataPtr:])
 			dataPtr += 12
 
 			if sig != LZW.Header.sig:
@@ -192,8 +192,7 @@ class CBFFile(object):
 class CBFArchive(object):
 	class Header:
 		size = 0x20
-		sig1 = 0x46474942	# "BIGF"
-		sig2 = 0x4C425A01	# \1"ZBL"
+		sig = b'BIGF\x01ZBL'
 
 	class Table:
 		itemSize = 0x28
@@ -220,9 +219,9 @@ class CBFArchive(object):
 		if len(self.fileData) < CBFArchive.Header.size:
 			raise RuntimeError("  Invalid header size")
 
-		(sig1, sig2, CBFSize, unk1, fileCnt, tableOffset, unk2, tableSize) = unpack("<IIIIIIII", self.fileData)
+		(sig, CBFSize, unk1, fileCnt, tableOffset, unk2, tableSize) = unpack("<8sIIIIII", self.fileData)
 
-		if sig1 != CBFArchive.Header.sig1 or sig2 != CBFArchive.Header.sig2:
+		if sig != CBFArchive.Header.sig:
 			raise RuntimeError("  Invalid header signature")
 
 		if tableOffset + tableSize > CBFSize:

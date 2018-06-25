@@ -44,19 +44,14 @@ def pchar_to_string(pchar):
 	return str(pchar, 'ascii').strip(chr(0))
 
 class BES(object):
-	vertices = []
-	faces = []
-	def __init__(self, fname):
-		self.f = open(fname, "rb")
+	class Header:
+		sig = b'BES\x00'
+		ver = b'0100\x00'
 
-		self.vertices = [(0, 0, 0), (5, 0, 0), (2.5, 5, 0)]
-		self.faces = [(0, 1, 2)]
-
+	def __init__(self, data):
 		self.vertices = []
 		self.faces = []
-		self.read_header()
-		self.read_preview()
-		self.read_data()
+		self.data = data
 
 	def unpack(self, fmt, data):
 		st_fmt = fmt
@@ -64,18 +59,30 @@ class BES(object):
 		st_unpack = struct.Struct(st_fmt).unpack_from
 		return st_unpack(data[:st_len])
 
-	def read_header(self):
-		data = self.f.read(0x10)
-		print(self.unpack("<5s4sI3c", data))
+	def parse_header(self):
+		(sig, ver, unk1, unk2) = self.unpack("<4s5sI3s", self.data)
 
-	def read_preview(self):
-		self.f.read(0x3000)
+		if sig != BES.Header.sig:
+			raise RuntimeError("  Invalid header signature")
 
-	def read_data(self):
-		data = self.f.read()
-		self.parse_data(data, 0)
+		if ver != BES.Header.ver:
+			logging.warning("  Unsupported BES version: {}".format(ver))
 
-	def parse_data(self, data, index):
+		if unk2 != b'\x00\x00\x00':
+			logging.warning("  Expected trailing zero bytes in header")
+
+		return ver
+
+	def parse_preview(self):
+		if len(self.data) < 0x3010:
+			raise RuntimeError("  Missing model preview image")
+
+		return self.data[0x10:0x3010]
+
+	def parse_data(self):
+		self.process_data(self.data[0x3010:], 0)
+
+	def process_data(self, data, index):
 		start = 0
 		while (len(data[start:]) > 8):
 			(label, size) = self.unpack("<II", data[start:])
@@ -118,21 +125,21 @@ class BES(object):
 		logging.log(logging.VERBOSE, "{}Object ({} B) - children: {}, name({}): {}".format(
 			" "*(index*2), len(data), children, name_size,	pchar_to_string(name)))
 
-		self.parse_data(data[8+name_size:], index + 1)
+		self.process_data(data[8+name_size:], index + 1)
 
 	def parse_block_unk30(self, data, index):
 		(children,) = self.unpack("<I", data)
 		logging.log(logging.VERBOSE, "{}Unk30 ({} B) - Number of meshes: {:08x}".format(
 			" "*(index*2), len(data), children))
 
-		self.parse_data(data[4:], index + 1)
+		self.process_data(data[4:], index + 1)
 
 	def parse_block_mesh(self, data, index):
 		(material,) = self.unpack("<I", data)
 		logging.log(logging.VERBOSE, "{}Mesh ({} B) - Material: {:08x}".format(
 			" "*(index*2), len(data), material))
 
-		self.parse_data(data[4:], index + 1)
+		self.process_data(data[4:], index + 1)
 
 	def parse_block_vertices(self, data, index):
 		(count, size, unknown) = self.unpack("<III", data)
@@ -190,7 +197,7 @@ class BES(object):
 		logging.log(logging.VERBOSE, "{}Material ({} B) - Number of materials: {:08x}".format(
 			" "*(index*2), len(data), children))
 
-		self.parse_data(data[4:], index + 1)
+		self.process_data(data[4:], index + 1)
 
 	def parse_block_bitmap(self, data, index):
 		(unk1, unk2, unk3, name_size, unk4) = self.unpack("<IIIII", data)
@@ -207,13 +214,26 @@ class BES(object):
 			" "*(index*2), len(data), name_size, pchar_to_string(name), chr(unk3[0]),
 			chr(unk3[1]), chr(unk5[0]), chr(unk5[1])))
 
+def processFile(fileName):
+	logging.info("Model: " + fileName)
+	try:
+		data = open(fileName, "rb").read()
+		bes = BES(data)
+		version = bes.parse_header()
+		preview = bes.parse_preview()
+		bes.parse_data()
+	except FileNotFoundError as e:
+		logging.error(e)
+	except RuntimeError as e:
+		logging.error(e)
+
 if __name__ == "__main__":
 	level = logging.INFO
 
 	parser = argparse.ArgumentParser()
 	parser.add_argument("-c", "--check",
 		help="check CHECK for integrity (as per reverse-engineered specification)",
-		nargs="?")
+		nargs="+")
 	parser.add_argument("-v", "--verbose",
 		help="verbose mode ON",
 		action="store_true")
@@ -225,8 +245,8 @@ if __name__ == "__main__":
 	logging.basicConfig(level=level, format="%(message)s")
 
 	if args.check:
-		logging.info("Model: " + args.check)
-		BES(args.check)
+		for fileName in args.check:
+			processFile(fileName)
 	else:
 		parser.print_help()
 		sys.exit(1)

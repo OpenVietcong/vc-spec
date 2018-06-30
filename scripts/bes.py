@@ -18,7 +18,7 @@
 # ##### END GPL LICENSE BLOCK #####
 
 """
-bes_tester.py - util for checking BES files for integrity
+bes.py - util for checking BES files for integrity
 """
 
 import sys

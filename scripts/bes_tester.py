@@ -214,14 +214,32 @@ class BES(object):
 			" "*(index*2), len(data), name_size, pchar_to_string(name), chr(unk3[0]),
 			chr(unk3[1]), chr(unk5[0]), chr(unk5[1])))
 
-def processFile(fileName):
+def savePreview(imageData, besName):
+	from PIL import Image
+
+	img = Image.new('RGB', (64, 64), 'white')
+
+	for row in range(0, 64):
+		for col in range(0, 64):
+			b = imageData[row*192+col*3+0]
+			g = imageData[row*192+col*3+1]
+			r = imageData[row*192+col*3+2]
+
+			img.putpixel((col, row), (r, g, b))
+
+	img.save(besName + ".png", 'PNG')
+
+def processFile(fileName, extract):
 	logging.info("Model: " + fileName)
 	try:
 		data = open(fileName, "rb").read()
 		bes = BES(data)
 		version = bes.parse_header()
 		preview = bes.parse_preview()
-		bes.parse_data()
+		if extract:
+			savePreview(preview, fileName)
+		else:
+			bes.parse_data()
 	except FileNotFoundError as e:
 		logging.error(e)
 	except RuntimeError as e:
@@ -234,6 +252,9 @@ if __name__ == "__main__":
 	parser.add_argument("-c", "--check",
 		help="check CHECK for integrity (as per reverse-engineered specification)",
 		nargs="+")
+	parser.add_argument("-x", "--extract-preview",
+		help="extract preview image from EXTRACT_PREVIEW file",
+		nargs="?")
 	parser.add_argument("-v", "--verbose",
 		help="verbose mode ON",
 		action="store_true")
@@ -244,10 +265,14 @@ if __name__ == "__main__":
 
 	logging.basicConfig(level=level, format="%(message)s")
 
-	if args.check:
-		for fileName in args.check:
-			processFile(fileName)
-	else:
+	if not (args.check or args.extract_preview):
 		parser.print_help()
 		sys.exit(1)
+
+	if args.check:
+		for fileName in args.check:
+			processFile(fileName, False)
+
+	if  args.extract_preview:
+		processFile(args.extract_preview, True)
 

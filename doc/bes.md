@@ -224,6 +224,7 @@ Purpose of these properties is unknown.
 4. Unknown
 5. Same values as 3.
 6. Unknown - usually 0x3F800000
+
 ### Unknown 0x036
 
 | Offset | Name      | Type     |
@@ -295,24 +296,43 @@ Other data sub-blocks may follow. Known sub-blocks:
 | 4      | Block size  | UINT32LE |
 | 8      | Unknown1    | UINT32LE |
 | 12     | Unknown2    | UINT32LE |
-| 16     | Unknown3    | UINT32LE |
-| 20     | Name length | UINT32LE |
-| 24     | Coordinates | UINT32LE |
-| 28     | Name        | CHAR[]   |
+| 16     | Type        | UINT32LE |
 
 1. Label of this sub-block - always 0x1001
 2. Size of this sub-block (including this field and label)
 3. Unknown
 4. Unknown
-5. Unknown
-6. Length of 'Name' string
-7. Coordinates configuration bitfield.
+5. Map type bitfield. Here is a sorted list of maps contained in this bitmap:
+  * 0 - Diffuse Color
+  * 1 - Displacement
+  * 2 - Bump
+  * 3 - Ambient Color
+  * 4 - Specular Color
+  * 5 - Specular Level
+  * 6 - Glossiness
+  * 7 - Self-Illumination
+  * 8 - Unknown
+  * 9 - Filter Color
+  * 10 - Reflection
+  * 11 - Refraction
+
+Set bit in field indicates that bitmap contains appropriate map.
+All maps have the same structure:
+
+| Offset | Name        | Type     |
+|--------|-------------|----------|
+| 0      | Name length | UINT32LE |
+| 4      | Coordinates | UINT32LE |
+| 8      | Name        | CHAR[]   |
+
+1. Length of 'Name' string
+2. Coordinates configuration bitfield.
 Tile and mirror can not be used at the same time.
   *  0 - U tile
   *  1 - V tile
   *  2 - U mirror
   *  3 - V mirror
-8. Name of bitmap file
+3. Name of bitmap file
 
 ### PteroMat
 

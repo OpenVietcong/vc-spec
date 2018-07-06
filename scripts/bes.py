@@ -48,6 +48,11 @@ class BES(object):
 		sig = b'BES\x00'
 		ver = b'0100\x00'
 
+	class Bitmap:
+		maps = ["Diffuse Color", "Displacement", "Bump", "Ambient Color",
+			"Specular Color", "Specular Level", "Glossiness", "Self-Illumination",
+			"UNKNOWN", "Filter Color", "Reflection", "Refraction"]
+
 	def __init__(self, data):
 		self.vertices = []
 		self.faces = []
@@ -200,10 +205,44 @@ class BES(object):
 		self.process_data(data[4:], index + 1)
 
 	def parse_block_bitmap(self, data, index):
-		(unk1, unk2, unk3, name_size, unk4) = self.unpack("<IIIII", data)
-		(name,) = self.unpack("<" + str(name_size) + "s", data[20:])
-		logging.log(logging.VERBOSE, "{}Bitmap ({} B) - name({}): {}".format(
-			" "*(index*2), len(data), name_size, pchar_to_string(name)))
+		(unk1, unk2, bType) = self.unpack("<I4sI", data)
+		sPrint = "{}Bitmap ({} B) - unk1: {}, unk2: {}".format(
+			" "*(index*2), len(data), unk1, unk2)
+		ptr = 12
+		for mapID in range(32):
+			if bType & (1 << mapID):
+				if mapID < len(BES.Bitmap.maps):
+					if BES.Bitmap.maps[mapID] == "UNKNOWN":
+						logging.warning("Undocumented bitmap detected")
+
+					(name_size, coord) = self.unpack("<II", data[ptr:])
+					(name,) = self.unpack("<" + str(name_size) + "s", data[ptr+8:])
+					sPrint += "\n{}{} map: ({}): {}".format(
+						" "*((index+1)*2), BES.Bitmap.maps[mapID],
+						name_size, pchar_to_string(name))
+					if coord & 0x5:
+						if coord & 0x5 == 0x1:
+							sPrint += ", U tile"
+						elif coord & 0x5 == 0x4:
+							sPrint += ", U mirror"
+						else:
+							logging.error("Unknown coordinates settings {:08x} not supported".
+								format(coord))
+					if coord & 0xA:
+						if coord & 0xA == 0x2:
+							sPrint += ", V tile"
+						elif coord & 0xA == 0xA:
+							sPrint += ", V mirror"
+						else:
+							logging.error("Unknown coordinates settings {:08x} not supported".
+								format(coord))
+					ptr += 8 + name_size
+				else:
+					logging.error("Unknown bitmap {:08x} not supported".format(1 << mapID))
+		if ptr != len(data):
+			logging.error("Block size do not match")
+
+		logging.log(logging.VERBOSE, sPrint)
 
 	def parse_block_ptero_mat(self, data, index):
 		(unk1, unk2, unk3, unk4, unk5) = self.unpack("<II4sI4s", data)

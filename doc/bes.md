@@ -302,7 +302,8 @@ Other data sub-blocks may follow. Known sub-blocks:
 2. Size of this sub-block (including this field and label)
 3. Unknown
 4. Unknown
-5. Map type bitfield. Here is a sorted list of maps contained in this bitmap:
+5. Map type bitfield.
+Here is a sorted list of maps contained in this bitmap:
   * 0 - Diffuse Color
   * 1 - Displacement
   * 2 - Bump
@@ -316,7 +317,7 @@ Other data sub-blocks may follow. Known sub-blocks:
   * 10 - Reflection
   * 11 - Refraction
 
-Set bit in field indicates that bitmap contains appropriate map.
+Set bit in field 'Type' indicates that bitmap contains appropriate map.
 All maps have the same structure:
 
 | Offset | Name        | Type     |
@@ -336,27 +337,66 @@ Tile and mirror can not be used at the same time.
 
 ### PteroMat
 
-| Offset | Name        | Type     |
-|--------|-------------|----------|
-| 0      | Label       | UINT32LE |
-| 4      | Block size  | UINT32LE |
-| 8      | Unknown1    | UINT32LE |
-| 12     | Unknown2    | UINT32LE |
-| 16     | Unknown3    | CHAR[4]  |
-| 20     | Unknown4    | UINT32LE |
-| 24     | Unknown5    | CHAR[4]  |
-| 28     | Name length | UINT32LE |
-| 32     | Name        | CHAR[]   |
+| Offset | Name         | Type     |
+|--------|--------------|----------|
+| 0      | Label        | UINT32LE |
+| 4      | Block size   | UINT32LE |
+| 8      | Sides        | UINT32LE |
+| 12     | Type         | UINT32LE |
+| 16     | CollisionMat | CHAR[4]  |
+| 20     | Unknown      | UINT32LE |
+| 24     | Vegetation   | CHAR[4]  |
+| 28     | Name length  | UINT32LE |
+| 32     | Name         | CHAR[]   |
 
 Some other data may follow.
 
 1. Label of this sub-block - always 0x1002
 2. Size of this sub-block (including this field and label)
-3. Unknown
-4. Unknown
-5. Collision Material
+3. Number of material sizes: 0 = 1 sided, 1 = 2-sided. Other values are invalid.
+4. Texture type bitfield. Here is a sorted list of textures contained in this material:
+  * 16 - Diffuse #1 - Ground
+  * 17 - Diffuse #2 - Multitexture
+  * 18 - Diffuse #3 - Overlay
+  * 19 - Environment #1
+  * 20 - LightMap
+  * 21 - Unknown
+  * 22 - Environment #2
+  * 23 - LightMap (Engine Lights)
+5. Collision Material (only first 2 bytes are valid, the rest are zeros)
 6. Unknown
-7. Grow/Grass Type
+Here is description of some **bytes** - bytes not listed here are always zero:
+  * 0 - unknown
+  * 1 - unknown
+  * 2 - Type of transparent (represented by value):
+    * 0: - none - (opaque)
+    * 1: #0 - transparent, zbufwrite, sort
+    * 2: #1 - transparent, zbufwrite, sort, 1-bit alpha
+    * 3: #2 - translucent, no\_zbufwrite, sort
+    * 4: #3 - transparent, zbufwrite, nosort, 1-bit alpha
+    * 5: #4 - translucent, add with background, no\_zbufwrite, sort
+  * 3 - unknown
+7. Grow/Grass Type (only first 2 **bytes** are valid, the rest are zeros)
+  * 0 - Grow Type
+  * 1 - Grass Type
 8. Length of 'Name' string
-9. Name of bitmap file
+9. Material name
+
+Set bit in field 'Type' indicates that PteroMat contains appropriate texture.
+All textures have the same structure:
+
+| Offset | Name        | Type     |
+|--------|-------------|----------|
+| 0      | Coordinates | UINT32LE |
+| 4      | Name length | UINT32LE |
+| 8      | Name        | CHAR[]   |
+
+1. Coordinates configuration bitfield.
+Upper 4 bytes should be equal to PteroMat's 'Type' field (but it is not always true - probably due some bug in 3DS Max).
+Meaning of lower 4 bytes follows (all bits except those listed here are always zero):
+  * 0 - U tile
+  * 1 - V tile
+  * 4 - unknown
+2. Length of 'Name' string
+3. Name of texture file
 

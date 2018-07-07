@@ -53,19 +53,50 @@ class BES(object):
 			"Specular Color", "Specular Level", "Glossiness", "Self-Illumination",
 			"UNKNOWN", "Filter Color", "Reflection", "Refraction"]
 
+	class PteroMat:
+		texs = ["Diffuse #1 - Ground", "Diffuse #2 - Multitexture", "Diffuse #3 - Overlay",
+			"Environment #1", "LightMap", "UNKNOWN",
+			"Environment #2", "LightMap (Engine Lights)"]
+		offset = 16
+
+		def parseTexture(data, index, texID):
+			(coord, name_size) = BES.unpack("<II", data)
+			(name,) = BES.unpack("<" + str(name_size) + "s", data[8:])
+
+			if BES.PteroMat.texs[texID - BES.PteroMat.offset] == "UNKNOWN":
+				logging.warning("Undocumented bitmap detected")
+
+			if (coord >> BES.PteroMat.offset) != (1 << (texID - BES.PteroMat.offset)):
+				logging.error("Texture type do not match ({:08x} vs {:08x})".format(
+				coord, 1 << texID))
+
+			if coord & 0xFFFC:
+				logging.warning("Unknown bits in texture ({:08x})".format(coord))
+
+			sPrint = "\n{}{} texture - ({}): {}".format(
+				" "*((index+1)*2), BES.PteroMat.texs[texID - BES.PteroMat.offset],
+				name_size, pchar_to_string(name))
+
+			if coord & 0x1:
+				sPrint += ", U tile"
+			if coord & 0x2:
+				sPrint += ", V tile"
+
+			return (8 + name_size, sPrint)
+
 	def __init__(self, data):
 		self.vertices = []
 		self.faces = []
 		self.data = data
 
-	def unpack(self, fmt, data):
+	def unpack(fmt, data):
 		st_fmt = fmt
 		st_len = struct.calcsize(st_fmt)
 		st_unpack = struct.Struct(st_fmt).unpack_from
 		return st_unpack(data[:st_len])
 
 	def parse_header(self):
-		(sig, ver, unk1, unk2) = self.unpack("<4s5sI3s", self.data)
+		(sig, ver, unk1, unk2) = BES.unpack("<4s5sI3s", self.data)
 
 		if sig != BES.Header.sig:
 			raise RuntimeError("  Invalid header signature")
@@ -90,7 +121,7 @@ class BES(object):
 	def process_data(self, data, index):
 		start = 0
 		while (len(data[start:]) > 8):
-			(label, size) = self.unpack("<II", data[start:])
+			(label, size) = BES.unpack("<II", data[start:])
 			subblock = data[start+8:start+size]
 			start += size
 
@@ -125,29 +156,29 @@ class BES(object):
 				hex_dump(subblock, index)
 
 	def parse_block_object(self, data, index):
-		(children, name_size) = self.unpack("<II", data)
-		(name,) = self.unpack("<" + str(name_size) + "s", data[8:])
+		(children, name_size) = BES.unpack("<II", data)
+		(name,) = BES.unpack("<" + str(name_size) + "s", data[8:])
 		logging.log(logging.VERBOSE, "{}Object ({} B) - children: {}, name({}): {}".format(
 			" "*(index*2), len(data), children, name_size,	pchar_to_string(name)))
 
 		self.process_data(data[8+name_size:], index + 1)
 
 	def parse_block_unk30(self, data, index):
-		(children,) = self.unpack("<I", data)
+		(children,) = BES.unpack("<I", data)
 		logging.log(logging.VERBOSE, "{}Unk30 ({} B) - Number of meshes: {:08x}".format(
 			" "*(index*2), len(data), children))
 
 		self.process_data(data[4:], index + 1)
 
 	def parse_block_mesh(self, data, index):
-		(material,) = self.unpack("<I", data)
+		(material,) = BES.unpack("<I", data)
 		logging.log(logging.VERBOSE, "{}Mesh ({} B) - Material: {:08x}".format(
 			" "*(index*2), len(data), material))
 
 		self.process_data(data[4:], index + 1)
 
 	def parse_block_vertices(self, data, index):
-		(count, size, unknown) = self.unpack("<III", data)
+		(count, size, unknown) = BES.unpack("<III", data)
 
 		logging.log(logging.VERBOSE, "{}Vertices ({} B) - count: {}, size: {}, unknown: {:08x}".format(
 			" "*(index*2), len(data), count, size, unknown))
@@ -158,7 +189,7 @@ class BES(object):
 			logging.error("Block size do not match")
 
 	def parse_block_faces(self, data, index):
-		(count, ) = self.unpack("<I", data)
+		(count, ) = BES.unpack("<I", data)
 
 		logging.log(logging.VERBOSE, "{}Faces ({} B) - count: {}".format(
 			" "*(index*2), len(data), count))
@@ -167,8 +198,8 @@ class BES(object):
 			logging.error("Block size do not match")
 
 	def parse_block_properties(self, data, index):
-		(count, ) = self.unpack("<I", data)
-		(prop,) = self.unpack("<" + str(count) + "s", data[4:])
+		(count, ) = BES.unpack("<I", data)
+		(prop,) = BES.unpack("<" + str(count) + "s", data[4:])
 		logging.log(logging.VERBOSE, "{}Properties ({} B): {}".format(
 			" "*(index*2), len(data), pchar_to_string(prop)))
 
@@ -176,7 +207,7 @@ class BES(object):
 			logging.error("Block size do not match: {} vs {}".format(len(data), count))
 
 	def parse_block_unk35(self, data, index):
-		(x, y, z) = self.unpack("<fff", data)
+		(x, y, z) = BES.unpack("<fff", data)
 		logging.log(logging.VERBOSE, "{}Unk35 ({} B) - position: [{}][{}][{}]".format(
 			" "*(index*2), len(data), x, y, z))
 
@@ -189,23 +220,23 @@ class BES(object):
 			" "*(index*2), len(data)))
 
 	def parse_block_user_info(self, data, index):
-		(name_size, comment_size, unknown) = self.unpack("<III", data)
-		(name,) = self.unpack("<" + str(name_size) + "s", data[12:])
-		(comment,) = self.unpack("<" + str(comment_size) + "s", data[76:])
+		(name_size, comment_size, unknown) = BES.unpack("<III", data)
+		(name,) = BES.unpack("<" + str(name_size) + "s", data[12:])
+		(comment,) = BES.unpack("<" + str(comment_size) + "s", data[76:])
 		logging.log(logging.VERBOSE,
 			"{}User info ({} B) - name({}): {}, comment({}): {}, unknown: {:08x}".format(
 				" "*(index*2), len(data), name_size, pchar_to_string(name),
 				comment_size, pchar_to_string(comment), unknown))
 
 	def parse_block_material(self, data, index):
-		(children,) = self.unpack("<I", data)
+		(children,) = BES.unpack("<I", data)
 		logging.log(logging.VERBOSE, "{}Material ({} B) - Number of materials: {:08x}".format(
 			" "*(index*2), len(data), children))
 
 		self.process_data(data[4:], index + 1)
 
 	def parse_block_bitmap(self, data, index):
-		(unk1, unk2, bType) = self.unpack("<I4sI", data)
+		(unk1, unk2, bType) = BES.unpack("<I4sI", data)
 		sPrint = "{}Bitmap ({} B) - unk1: {}, unk2: {}".format(
 			" "*(index*2), len(data), unk1, unk2)
 		ptr = 12
@@ -215,8 +246,8 @@ class BES(object):
 					if BES.Bitmap.maps[mapID] == "UNKNOWN":
 						logging.warning("Undocumented bitmap detected")
 
-					(name_size, coord) = self.unpack("<II", data[ptr:])
-					(name,) = self.unpack("<" + str(name_size) + "s", data[ptr+8:])
+					(name_size, coord) = BES.unpack("<II", data[ptr:])
+					(name,) = BES.unpack("<" + str(name_size) + "s", data[ptr+8:])
 					sPrint += "\n{}{} map: ({}): {}".format(
 						" "*((index+1)*2), BES.Bitmap.maps[mapID],
 						name_size, pchar_to_string(name))
@@ -245,13 +276,37 @@ class BES(object):
 		logging.log(logging.VERBOSE, sPrint)
 
 	def parse_block_ptero_mat(self, data, index):
-		(unk1, unk2, unk3, unk4, unk5) = self.unpack("<II4sI4s", data)
-		(name_size,) = self.unpack("<I", data[20:])
-		(name,) = self.unpack("<" + str(name_size) + "s", data[24:])
-		logging.log(logging.VERBOSE,
-			"{}PteroMat ({} B) - name({}): {}, collision material: '{}{}', grow type: '{}', grass type: '{}'".format(
-			" "*(index*2), len(data), name_size, pchar_to_string(name), chr(unk3[0]),
-			chr(unk3[1]), chr(unk5[0]), chr(unk5[1])))
+		(tSides, pType, collisMat, unk4, veget) = BES.unpack("<II4sI4s", data)
+		(name_size,) = BES.unpack("<I", data[20:])
+		(name,) = BES.unpack("<" + str(name_size) + "s", data[24:])
+
+		if tSides & 0xFFFFFFE:
+			logging.warning("Invalid transparent sides settings: {:08x}".format(tSides))
+		if collisMat[2:] != b'\x00\x00':
+			logging.warning("Expected two zeros in collision material")
+		if veget[2:] != b'\x00\x00':
+			logging.warning("Expected two zeros in grow/grass type")
+
+		sPrint = ("{}PteroMat ({} B) - name({}): {}, {}-Sided, collision material: '{}{}'" +
+			", grow type: '{}', grass type: '{}'").format(
+			" "*(index*2), len(data), name_size, pchar_to_string(name), tSides + 1,
+			chr(collisMat[0]), chr(collisMat[1]), chr(veget[0]), chr(veget[1]))
+		ptr = 24 + name_size
+		for texID in range(32):
+			if pType & (1 << texID):
+				if (texID >= BES.PteroMat.offset) and \
+				(texID < BES.PteroMat.offset + len(BES.PteroMat.texs)):
+					(dataSize, sPrintNew) = BES.PteroMat.parseTexture(data[ptr:],
+									index + 1, texID)
+					ptr += dataSize
+					sPrint += sPrintNew
+				else:
+					logging.error("Unknown texture {:08x} not supported".format(1 << texID))
+
+		logging.log(logging.VERBOSE, sPrint)
+
+		if ptr != len(data):
+			logging.error("Block size do not match")
 
 def savePreview(imageData, besName):
 	from PIL import Image

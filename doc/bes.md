@@ -1,4 +1,4 @@
-This document describes BES files.
+This document describes BES (BenyErikSolitude) files.
 
 File format
 ===========
@@ -86,7 +86,7 @@ Here is quick reference table of known data sub-blocks:
 | 12     | Name length     | UINT32   |
 | 16     | Name            | CHAR[]   |
 
-1. Label of this sub-block - always 0x001
+1. Label of this sub-block - always 0x0001
 2. Size of this sub-block (including this field and label)
 3. Number of 'Object' sub-blocks inside of this one
 4. Length of 'Name' string
@@ -105,7 +105,7 @@ Other data sub-blocks may follow. Known sub-blocks:
 | 4      | Blok size     | UINT32LE |
 | 8      | Mesh children | UINT32LE |
 
-1. Label of this sub-block - always 0x030
+1. Label of this sub-block - always 0x0030
 2. Size of this sub-block (including this field and label)
 3. Number of children meshes inside of this block
 
@@ -123,7 +123,7 @@ Other data sub-blocks may follow. Known sub-blocks:
 | 4      | Blok size | UINT32LE |
 | 8      | Material  | UINT32LE |
 
-1. Label of this sub-block - always 0x031
+1. Label of this sub-block - always 0x0031
 2. Size of this sub-block (including this field and label)
 3. Material ID (popints to the one of children of 'Material' data block) used by this mesh.
 Value 0xFFFFFFFF if no material is used.
@@ -142,7 +142,7 @@ Other data sub-blocks may follow. Known sub-blocks:
 | 12     | Size of vertex | UINT32LE |
 | 16     | Unknown        | UINT32LE |
 
-1. Label of this sub-block - always 0x032
+1. Label of this sub-block - always 0x0032
 2. Size of this sub-block (including this field and label)
 3. Number of vertices in this data block
 4. Size of vertex structure
@@ -174,7 +174,7 @@ Vertex value points to vertex ID in 'Vertices' data block.
 | 4      | Blok size   | UINT32LE |
 | 8      | Faces count | UINT32LE |
 
-1. Label of this sub-block - always 0x033
+1. Label of this sub-block - always 0x0033
 2. Size of this sub-block (including this field and label)
 3. Number of faces in this data block
 
@@ -202,7 +202,7 @@ Purpose of these properties is unknown.
 | 8      | Text length | UINT32LE |
 | 12     | Text        | CHAR[]   |
 
-1. Label of this sub-block - always 0x034
+1. Label of this sub-block - always 0x0034
 2. Size of this sub-block (including this field and label)
 3. Length of 'Text' string
 4. String containing user defined properties
@@ -218,7 +218,7 @@ Purpose of these properties is unknown.
 | 84     | Position2 | FLOAT32LE[3] |
 | 96     | Unknown2  | CHAR[4]      |
 
-1. Label of this sub-block - always 0x035
+1. Label of this sub-block - always 0x0035
 2. Size of this sub-block (including this field and label) - always 0x64 (100B)
 3. Object position in scene - coordinates are in the following order: x, y, z
 4. Unknown
@@ -233,7 +233,7 @@ Purpose of these properties is unknown.
 | 4      | Blok size | UINT32LE |
 | 8      | Unknown   | UINT32LE |
 
-1. Label of this sub-block - always 0x036
+1. Label of this sub-block - always 0x0036
 2. Size of this sub-block (including this field and label)
 3. Unknown
 
@@ -245,7 +245,7 @@ Purpose of these properties is unknown.
 | 4      | Blok size | UINT32LE |
 | 8      | Unknown   | CHAR[]   |
 
-1. Label of this sub-block - always 0x038
+1. Label of this sub-block - always 0x0038
 2. Size of this sub-block (including this field and label)
 3. Unknown
 
@@ -264,7 +264,7 @@ Space between 'Name' and 'Comment' is filled with zeros
 | 20     | Name           | CHAR[]   |
 | 84     | Comment        | CHAR[]   |
 
-1. Label of this sub-block - always 0x070
+1. Label of this sub-block - always 0x0070
 2. Size of this sub-block (including this field and label)
 3. Length of 'Name' string. Should not exceed 64 bytes.
 4. Length of 'Comment' string.
@@ -349,8 +349,6 @@ Tile and mirror can not be used at the same time.
 | 28     | Name length  | UINT32LE |
 | 32     | Name         | CHAR[]   |
 
-Some other data may follow.
-
 1. Label of this sub-block - always 0x1002
 2. Size of this sub-block (including this field and label)
 3. Number of material sizes: 0 = 1 sided, 1 = 2-sided. Other values are invalid.
@@ -392,8 +390,8 @@ All textures have the same structure:
 | 8      | Name        | CHAR[]   |
 
 1. Coordinates configuration bitfield.
-Upper 4 bytes should be equal to PteroMat's 'Type' field (but it is not always true - probably due some bug in 3DS Max).
-Meaning of lower 4 bytes follows (all bits except those listed here are always zero):
+Upper 2 bytes should be equal to PteroMat's 'Type' field (but it is not always true - probably due some bug in 3DS Max).
+Meaning of lower 2 bytes follows (all bits except those listed here are always zero):
   * 0 - U tile
   * 1 - V tile
   * 4 - unknown

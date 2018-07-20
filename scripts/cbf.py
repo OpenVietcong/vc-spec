@@ -226,6 +226,8 @@ class CBFArchive(object):
 
 		if tableOffset + tableSize > CBFSize:
 			raise RuntimeError("  Invalid file table location")
+		if tableOffset + tableSize < CBFSize:
+			logging.warning("  Unknown data after file table")
 
 		if len(self.fileData) != CBFSize:
 			logging.error("  Invalid CBF size")

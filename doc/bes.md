@@ -134,33 +134,45 @@ Other data sub-blocks may follow. Known sub-blocks:
 
 ### Vertices
 
-| Offset | Name           | Type     |
-|--------|----------------|----------|
-| 0      | Label          | UINT32LE |
-| 4      | Blok size      | UINT32LE |
-| 8      | Vertices count | UINT32LE |
-| 12     | Size of vertex | UINT32LE |
-| 16     | Unknown        | UINT32LE |
+| Offset | Name        | Type     |
+|--------|-------------|----------|
+| 0      | Label       | UINT32LE |
+| 4      | Blok size   | UINT32LE |
+| 8      | Vertices    | UINT32LE |
+| 12     | Size        | UINT32LE |
+| 16     | Properties  | UINT32LE |
 
 1. Label of this sub-block - always 0x0032
 2. Size of this sub-block (including this field and label)
 3. Number of vertices in this data block
-4. Size of vertex structure
-5. Unknown - usually 0x12 or 0x112
+4. Size of vertex structure.
+Should be 24 + 8 * number\_of\_textures (see below).
+5. Vertices properties.
+Here is description of some **bytes** - bytes not listed here are always zero:
+  * 0 - always 0x12
+  * 1 - number of textures used by material (see 'Type' field of Bitmap or PteroMat).
 
 Vertices data structures follows:
 
-| Offset | Name       | Type      |
-|--------|------------|-----------|
-| 0      | Position x | FLOAT32LE |
-| 4      | Position y | FLOAT32LE |
-| 8      | Position z | FLOAT32LE |
-| 12     | Unknown    | CHAR[]    |
+| Offset | Name       | Type        |
+|--------|------------|-------------|
+| 0      | Position x | FLOAT32LE   |
+| 4      | Position y | FLOAT32LE   |
+| 8      | Position z | FLOAT32LE   |
+| 12     | Unknown    | FLOAT32LE   |
+| 16     | Unknown    | FLOAT32LE   |
+| 20     | Unknown    | FLOAT32LE   |
+| 24     | UV mapping | FLOAT32LE[] |
 
 1. 'X' vertex coordinate.
 2. 'Y' vertex coordinate.
 3. 'Z' vertex coordinate.
 4. Unknown
+5. Unknown
+6. Unknown
+7. UV mapping.
+Contains two float coordinates ('U' and 'V') for each texture (see vertices 'Properties' for number of textures).
+
 
 ### Faces
 

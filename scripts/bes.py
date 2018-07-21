@@ -178,14 +178,15 @@ class BES(object):
 		self.process_data(data[4:], index + 1)
 
 	def parse_block_vertices(self, data, index):
-		(count, size, unknown) = BES.unpack("<III", data)
+		(count, size, vType) = BES.unpack("<III", data)
+		texCnt = (vType >> 8) & 0xFF
 
-		logging.log(logging.VERBOSE, "{}Vertices ({} B) - count: {}, size: {}, unknown: {:08x}".format(
-			" "*(index*2), len(data), count, size, unknown))
+		logging.log(logging.VERBOSE, "{}Vertices ({} B) - count: {}, size: {}, type: {:08x}".format(
+			" "*(index*2), len(data), count, size, vType))
 
-		if size < 12:
-			logging.error("Unsupported size '{}' of vertex struct".format(size))
-		if len(data[12:]) != size * count:
+		if 24 + 8 * texCnt != size:
+			logging.error("Vertex size do not match")
+		elif len(data[12:]) != size * count:
 			logging.error("Block size do not match")
 
 	def parse_block_faces(self, data, index):

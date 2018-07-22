@@ -20,16 +20,56 @@ project.
 
 # Known file formats
 
-* CBF (CompressedBigFile) - archive containing encrypted/compressed files.
-Documented around 95%.
-Known (un)official tools:
-  * [Total Commander plugin](http://www.vietcong-coop.net/site?node_id=6&action=show_data&p_id=510&ordercol=fileclass&ordertype=ASC&row=41)
-* BES (BenyErikSolitude) - 3D model.
+* [BES](https://github.com/OpenVietcong/vc-spec/blob/master/doc/bes.md)
+ (BenyErikSolitude) - 3D model.
 Contains references to other sources, like textures.
 Documented around 90% of version *100*.
-Known (un)official tools:
+Known tools:
   * [3DS MAX 5.1/6/7/8 plugins](http://www.vietcong.info/portal/downloads.php?cat\_id=2)
   * [Blender plugin](https://github.com/sonicpp/vietcong-blender-plugins)
-* MANM (ModelAnimation) - describes animation of certain model from BES file.
+* [CBF](https://github.com/OpenVietcong/vc-spec/blob/master/doc/cbf.md)
+(CompressedBigFile) - archive containing encrypted/compressed files.
+Documented around 95%.
+Known tools:
+  * [Total Commander plugin](http://www.vietcong-coop.net/site?node_id=6&action=show_data&p_id=510&ordercol=fileclass&ordertype=ASC&row=41)
+* EQP (Equipment)
+* FNT (Font)
+* [MANM](https://github.com/OpenVietcong/vc-spec/blob/master/doc/manm.md)
+ (ModelAnimation) - describes animation of certain model from BES file.
 Documented around 40%.
+* SCO (SceneObject)
+Known tools:
+  * [Vietcong Editor](http://www.vietcong.info/portal/downloads.php?cat\_id=2)
+  * [Vietcong dev editor](http://www.vietcong.info/portal/downloads.php?cat\_id=2)
+* SCR (Script) - compiled from Script ANSI C source code
+
+# Unknown file formats
+
+* LCP
+* LDT
+* OCT
+* PTL
+* SCC
+* SHM
+* SSC (sound?)
+* STD
+* STG
+* STO (skelet animation?)
+* TX3
+* WAY (waypoint?)
+* XDT
+* XST
+* XTL
+
+# Generic file formats
+
+Images:
+* [BMP](https://en.wikipedia.org/wiki/BMP_file_format)
+* [DDS](https://en.wikipedia.org/wiki/DirectDraw_Surface)
+* [JPG](https://en.wikipedia.org/wiki/JPEG)
+* [TGA](https://en.wikipedia.org/wiki/Truevision_TGA)
+
+Audio:
+* [OGG](https://en.wikipedia.org/wiki/Ogg)
+* [WAV](https://en.wikipedia.org/wiki/WAV)
 

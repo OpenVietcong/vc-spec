@@ -48,6 +48,12 @@ class BES(object):
 		sig = b'BES\x00'
 		ver = b'0100\x00'
 
+	class BlockPresence:
+		OptSingle   = 0  # <0;1>
+		OptMultiple = 1  # <0;N>
+		ReqSingle   = 2  # <1;1>
+		ReqMultiple = 3  # <1;N>
+
 	class Bitmap:
 		maps = ["Diffuse Color", "Displacement", "Bump", "Ambient Color",
 			"Specular Color", "Specular Level", "Glossiness", "Self-Illumination",
@@ -116,44 +122,78 @@ class BES(object):
 		return self.data[0x10:0x3010]
 
 	def parse_data(self):
-		self.process_data(self.data[0x3010:], 0)
+		res = self.parse_blocks({0x0070 : BES.BlockPresence.ReqSingle,
+					0x0001 : BES.BlockPresence.ReqSingle},
+					self.data[0x3010:], 0)
 
-	def process_data(self, data, index):
+	def parse_block_desc(self, data):
+		return BES.unpack("<II", data)
+
+	def parse_blocks(self, blocks, data, index):
+		# Init info about parsed blocks
+		blocks_parsed = dict()
+		for label in blocks:
+			blocks_parsed[label] = False
+
+		# Search for all blocks
 		start = 0
-		while (len(data[start:]) > 8):
-			(label, size) = BES.unpack("<II", data[start:])
-			subblock = data[start+8:start+size]
+		while len(data[start:]) > 0:
+			(label, size) = self.parse_block_desc(data[start:])
+
+			if label not in blocks:
+				logging.warning("{}Unexpected block {:04X} at this location".format(
+					" "*(index*2), label))
+			else:
+				if (blocks[label] == BES.BlockPresence.OptSingle or
+				blocks[label] == BES.BlockPresence.ReqSingle) and blocks_parsed[label] == True:
+					logging.warning("{}Invalid number of occurrences of block {:04X} (max 1)".format(
+						" "*(index*2), label))
+				blocks_parsed[label] = True
+
+			subblock = data[start + 8: start + size]
+			self.process_data(label, subblock, index)
 			start += size
 
-			if   label == 0x0001:
-				self.parse_block_object(subblock, index)
-			elif label == 0x0030:
-				self.parse_block_unk30(subblock, index)
-			elif label == 0x0031:
-				self.parse_block_mesh(subblock, index)
-			elif label == 0x0032:
-				self.parse_block_vertices(subblock, index)
-			elif label == 0x0033:
-				self.parse_block_faces(subblock, index)
-			elif label == 0x0034:
-				self.parse_block_properties(subblock, index)
-			elif label == 0x0035:
-				self.parse_block_unk35(subblock, index)
-			elif label == 0x0036:
-				self.parse_block_unk36(subblock, index)
-			elif label == 0x0038:
-				self.parse_block_unk38(subblock, index)
-			elif label == 0x0070:
-				self.parse_block_user_info(subblock, index)
-			elif label == 0x1000:
-				self.parse_block_material(subblock, index)
-			elif label == 0x1001:
-				self.parse_block_bitmap(subblock, index)
-			elif label == 0x1002:
-				self.parse_block_ptero_mat(subblock, index)
-			else:
-				logging.warning("Unknown block {}".format(hex(label)))
-				hex_dump(subblock, index)
+		if start != len(data):
+			logging.error("{}Block {:04X} contains more data than expected".format(
+				" "*(index*2), label))
+
+		# Check if all required blocks were found in this block
+		for label in blocks:
+			if (blocks[label] == BES.BlockPresence.ReqSingle or
+			blocks[label] == BES.BlockPresence.ReqMultiple) and blocks_parsed[label] == False:
+				logging.warning("Invalid number of occurrences of block {:04X} (min 1)".format(label))
+
+	def process_data(self, label, subblock, index):
+		if   label == 0x0001:
+			self.parse_block_object(subblock, index)
+		elif label == 0x0030:
+			self.parse_block_unk30(subblock, index)
+		elif label == 0x0031:
+			self.parse_block_mesh(subblock, index)
+		elif label == 0x0032:
+			self.parse_block_vertices(subblock, index)
+		elif label == 0x0033:
+			self.parse_block_faces(subblock, index)
+		elif label == 0x0034:
+			self.parse_block_properties(subblock, index)
+		elif label == 0x0035:
+			self.parse_block_unk35(subblock, index)
+		elif label == 0x0036:
+			self.parse_block_unk36(subblock, index)
+		elif label == 0x0038:
+			self.parse_block_unk38(subblock, index)
+		elif label == 0x0070:
+			self.parse_block_user_info(subblock, index)
+		elif label == 0x1000:
+			self.parse_block_material(subblock, index)
+		elif label == 0x1001:
+			self.parse_block_bitmap(subblock, index)
+		elif label == 0x1002:
+			self.parse_block_ptero_mat(subblock, index)
+		else:
+			logging.warning("Unknown block {}".format(hex(label)))
+			hex_dump(subblock, index)
 
 	def parse_block_object(self, data, index):
 		(children, name_size) = BES.unpack("<II", data)
@@ -161,21 +201,33 @@ class BES(object):
 		logging.log(logging.VERBOSE, "{}Object ({} B) - children: {}, name({}): {}".format(
 			" "*(index*2), len(data), children, name_size,	pchar_to_string(name)))
 
-		self.process_data(data[8+name_size:], index + 1)
+		self.parse_blocks({0x0001 : BES.BlockPresence.OptMultiple,
+				0x0030 : BES.BlockPresence.OptSingle,
+				0x0034 : BES.BlockPresence.OptSingle,
+				0x0035 : BES.BlockPresence.OptSingle,
+				0x0038 : BES.BlockPresence.OptSingle,
+				0x1000 : BES.BlockPresence.OptSingle},
+				data[8 + name_size:], index + 1)
 
 	def parse_block_unk30(self, data, index):
 		(children,) = BES.unpack("<I", data)
 		logging.log(logging.VERBOSE, "{}Unk30 ({} B) - Number of meshes: {:08x}".format(
 			" "*(index*2), len(data), children))
 
-		self.process_data(data[4:], index + 1)
+		self.parse_blocks({0x0031 : BES.BlockPresence.OptMultiple,
+				0x0034 : BES.BlockPresence.ReqSingle,
+				0x0035 : BES.BlockPresence.ReqSingle,
+				0x0036 : BES.BlockPresence.OptSingle},
+				data[4:], index + 1)
 
 	def parse_block_mesh(self, data, index):
 		(material,) = BES.unpack("<I", data)
 		logging.log(logging.VERBOSE, "{}Mesh ({} B) - Material: {:08x}".format(
 			" "*(index*2), len(data), material))
 
-		self.process_data(data[4:], index + 1)
+		self.parse_blocks({0x0032 : BES.BlockPresence.ReqSingle,
+				0x0033: BES.BlockPresence.ReqSingle},
+				data[4:], index + 1)
 
 	def parse_block_vertices(self, data, index):
 		(count, size, vType) = BES.unpack("<III", data)
@@ -185,9 +237,11 @@ class BES(object):
 			" "*(index*2), len(data), count, size, vType))
 
 		if 24 + 8 * texCnt != size:
-			logging.error("Vertex size do not match")
+			logging.error("{}Vertex size do not match".format(
+				" "*(index*2)))
 		elif len(data[12:]) != size * count:
-			logging.error("Block size do not match")
+			logging.error("{}Block size do not match".format(
+				" "*(index*2)))
 
 	def parse_block_faces(self, data, index):
 		(count, ) = BES.unpack("<I", data)
@@ -196,7 +250,8 @@ class BES(object):
 			" "*(index*2), len(data), count))
 
 		if len(data[4:]) != count * 12:
-			logging.error("Block size do not match")
+			logging.error("{}Block size do not match".format(
+				" "*(index*2)))
 
 	def parse_block_properties(self, data, index):
 		(count, ) = BES.unpack("<I", data)
@@ -205,12 +260,16 @@ class BES(object):
 			" "*(index*2), len(data), pchar_to_string(prop)))
 
 		if count + 4 != len(data):
-			logging.error("Block size do not match: {} vs {}".format(len(data), count))
+			logging.error("{}Block size do not match: {} vs {}".format(
+				" "*(index*2), len(data), count + 4))
 
 	def parse_block_unk35(self, data, index):
 		(x, y, z) = BES.unpack("<fff", data)
 		logging.log(logging.VERBOSE, "{}Unk35 ({} B) - position: [{}][{}][{}]".format(
 			" "*(index*2), len(data), x, y, z))
+
+		if len(data) != 100:
+			logging.error("{}Block size do not match".format(" "*(index*2)))
 
 	def parse_block_unk36(self, data, index):
 		logging.log(logging.VERBOSE, "{}Unk36 ({} B)".format(
@@ -229,12 +288,22 @@ class BES(object):
 				" "*(index*2), len(data), name_size, pchar_to_string(name),
 				comment_size, pchar_to_string(comment), unknown))
 
+		if name_size > 64:
+			logging.error("{}Invalid name length ({})".format(
+				" "*(index*2), name_size))
+		if len(data) != 76 + comment_size:
+			logging.error("{}Block size do not match: {} vs {}".format(
+				" "*(index*2), len(data), 76 + comment_size))
+
+
 	def parse_block_material(self, data, index):
 		(children,) = BES.unpack("<I", data)
 		logging.log(logging.VERBOSE, "{}Material ({} B) - Number of materials: {:08x}".format(
 			" "*(index*2), len(data), children))
 
-		self.process_data(data[4:], index + 1)
+		self.parse_blocks({0x1001 : BES.BlockPresence.OptMultiple,
+				0x1002 : BES.BlockPresence.OptMultiple},
+				data[4:], index + 1)
 
 	def parse_block_bitmap(self, data, index):
 		(unk1, unk2, bType) = BES.unpack("<I4sI", data)

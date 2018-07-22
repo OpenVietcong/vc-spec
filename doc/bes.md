@@ -53,6 +53,8 @@ Data
 
 Data block contains several sub-blocks.
 Each sub-block contain it's label, size and data itself.
+Some sub-blocks may contain other sub-blocks inside.
+Their occurence frequency is written in brackets.
 
 Here is quick reference table of known data sub-blocks:
 
@@ -93,9 +95,12 @@ Here is quick reference table of known data sub-blocks:
 5. Name
 
 Other data sub-blocks may follow. Known sub-blocks:
-* Object
-* Unknown 0x030
-* Material
+* Object (any)
+* Unknown 0x030 (1 at most)
+* Properties (1 at most)
+* Unknown 0x035 (1 at most)
+* Unknown 0x038 (1 at most)
+* Material (1 at most)
 
 ### Unknown 0x030
 
@@ -110,10 +115,10 @@ Other data sub-blocks may follow. Known sub-blocks:
 3. Number of children meshes inside of this block
 
 Other data sub-blocks may follow. Known sub-blocks:
-* Mesh
-* Properties
-* Unknown 0x035
-* Unknown 0x036
+* Mesh (any)
+* Properties (1)
+* Unknown 0x035 (1)
+* Unknown 0x036 (1 at most)
 
 ### Mesh
 
@@ -129,8 +134,8 @@ Other data sub-blocks may follow. Known sub-blocks:
 Value 0xFFFFFFFF if no material is used.
 
 Other data sub-blocks may follow. Known sub-blocks:
-* Vertices
-* Faces
+* Vertices (1)
+* Faces (1)
 
 ### Vertices
 
@@ -172,7 +177,6 @@ Vertices data structures follows:
 6. Unknown
 7. UV mapping.
 Contains two float coordinates ('U' and 'V') for each texture (see vertices 'Properties' for number of textures).
-
 
 ### Faces
 
@@ -297,8 +301,8 @@ Space between 'Name' and 'Comment' is filled with zeros
 3. Number of materials inside of this block
 
 Other data sub-blocks may follow. Known sub-blocks:
-* Bitmap
-* PteroMat
+* Bitmap (any)
+* PteroMat (any)
 
 ### Bitmap
 

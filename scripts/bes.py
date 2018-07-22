@@ -48,6 +48,21 @@ class BES(object):
 		sig = b'BES\x00'
 		ver = b'0100\x00'
 
+	class BlockID:
+		Object		= 0x0001
+		Unk30		= 0x0030
+		Mesh		= 0x0031
+		Vertices	= 0x0032
+		Faces		= 0x0033
+		Properties	= 0x0034
+		Unk35		= 0x0035
+		Unk36		= 0x0036
+		Unk38		= 0x0038
+		UserInfo	= 0x0070
+		Material	= 0x1000
+		Bitmap		= 0x1001
+		PteroMat	= 0x1002
+
 	class BlockPresence:
 		OptSingle   = 0  # <0;1>
 		OptMultiple = 1  # <0;N>
@@ -122,12 +137,43 @@ class BES(object):
 		return self.data[0x10:0x3010]
 
 	def parse_data(self):
-		res = self.parse_blocks({0x0070 : BES.BlockPresence.ReqSingle,
-					0x0001 : BES.BlockPresence.ReqSingle},
+		res = self.parse_blocks({BES.BlockID.Object  : BES.BlockPresence.ReqSingle,
+					BES.BlockID.UserInfo : BES.BlockPresence.ReqSingle},
 					self.data[0x3010:], 0)
 
 	def parse_block_desc(self, data):
 		return BES.unpack("<II", data)
+
+	def process_block_by_label(self, label, subblock, index):
+		if   label == BES.BlockID.Object:
+			self.parse_block_object(subblock, index)
+		elif label == BES.BlockID.Unk30:
+			self.parse_block_unk30(subblock, index)
+		elif label == BES.BlockID.Mesh:
+			self.parse_block_mesh(subblock, index)
+		elif label == BES.BlockID.Vertices:
+			self.parse_block_vertices(subblock, index)
+		elif label == BES.BlockID.Faces:
+			self.parse_block_faces(subblock, index)
+		elif label == BES.BlockID.Properties:
+			self.parse_block_properties(subblock, index)
+		elif label == BES.BlockID.Unk35:
+			self.parse_block_unk35(subblock, index)
+		elif label == BES.BlockID.Unk36:
+			self.parse_block_unk36(subblock, index)
+		elif label == BES.BlockID.Unk38:
+			self.parse_block_unk38(subblock, index)
+		elif label == BES.BlockID.UserInfo:
+			self.parse_block_user_info(subblock, index)
+		elif label == BES.BlockID.Material:
+			self.parse_block_material(subblock, index)
+		elif label == BES.BlockID.Bitmap:
+			self.parse_block_bitmap(subblock, index)
+		elif label == BES.BlockID.PteroMat:
+			self.parse_block_ptero_mat(subblock, index)
+		else:
+			logging.warning("Unknown block {}".format(hex(label)))
+			hex_dump(subblock, index)
 
 	def parse_blocks(self, blocks, data, index):
 		# Init info about parsed blocks
@@ -151,7 +197,7 @@ class BES(object):
 				blocks_parsed[label] = True
 
 			subblock = data[start + 8: start + size]
-			self.process_data(label, subblock, index)
+			self.process_block_by_label(label, subblock, index)
 			start += size
 
 		if start != len(data):
@@ -164,49 +210,18 @@ class BES(object):
 			blocks[label] == BES.BlockPresence.ReqMultiple) and blocks_parsed[label] == False:
 				logging.warning("Invalid number of occurrences of block {:04X} (min 1)".format(label))
 
-	def process_data(self, label, subblock, index):
-		if   label == 0x0001:
-			self.parse_block_object(subblock, index)
-		elif label == 0x0030:
-			self.parse_block_unk30(subblock, index)
-		elif label == 0x0031:
-			self.parse_block_mesh(subblock, index)
-		elif label == 0x0032:
-			self.parse_block_vertices(subblock, index)
-		elif label == 0x0033:
-			self.parse_block_faces(subblock, index)
-		elif label == 0x0034:
-			self.parse_block_properties(subblock, index)
-		elif label == 0x0035:
-			self.parse_block_unk35(subblock, index)
-		elif label == 0x0036:
-			self.parse_block_unk36(subblock, index)
-		elif label == 0x0038:
-			self.parse_block_unk38(subblock, index)
-		elif label == 0x0070:
-			self.parse_block_user_info(subblock, index)
-		elif label == 0x1000:
-			self.parse_block_material(subblock, index)
-		elif label == 0x1001:
-			self.parse_block_bitmap(subblock, index)
-		elif label == 0x1002:
-			self.parse_block_ptero_mat(subblock, index)
-		else:
-			logging.warning("Unknown block {}".format(hex(label)))
-			hex_dump(subblock, index)
-
 	def parse_block_object(self, data, index):
 		(children, name_size) = BES.unpack("<II", data)
 		(name,) = BES.unpack("<" + str(name_size) + "s", data[8:])
 		logging.log(logging.VERBOSE, "{}Object ({} B) - children: {}, name({}): {}".format(
 			" "*(index*2), len(data), children, name_size,	pchar_to_string(name)))
 
-		self.parse_blocks({0x0001 : BES.BlockPresence.OptMultiple,
-				0x0030 : BES.BlockPresence.OptSingle,
-				0x0034 : BES.BlockPresence.OptSingle,
-				0x0035 : BES.BlockPresence.OptSingle,
-				0x0038 : BES.BlockPresence.OptSingle,
-				0x1000 : BES.BlockPresence.OptSingle},
+		self.parse_blocks({BES.BlockID.Object  : BES.BlockPresence.OptMultiple,
+				BES.BlockID.Unk30      : BES.BlockPresence.OptSingle,
+				BES.BlockID.Properties : BES.BlockPresence.OptSingle,
+				BES.BlockID.Unk35      : BES.BlockPresence.OptSingle,
+				BES.BlockID.Unk38      : BES.BlockPresence.OptSingle,
+				BES.BlockID.Material   : BES.BlockPresence.OptSingle},
 				data[8 + name_size:], index + 1)
 
 	def parse_block_unk30(self, data, index):
@@ -214,10 +229,10 @@ class BES(object):
 		logging.log(logging.VERBOSE, "{}Unk30 ({} B) - Number of meshes: {:08x}".format(
 			" "*(index*2), len(data), children))
 
-		self.parse_blocks({0x0031 : BES.BlockPresence.OptMultiple,
-				0x0034 : BES.BlockPresence.ReqSingle,
-				0x0035 : BES.BlockPresence.ReqSingle,
-				0x0036 : BES.BlockPresence.OptSingle},
+		self.parse_blocks({BES.BlockID.Mesh    : BES.BlockPresence.OptMultiple,
+				BES.BlockID.Properties : BES.BlockPresence.ReqSingle,
+				BES.BlockID.Unk35      : BES.BlockPresence.ReqSingle,
+				BES.BlockID.Unk36      : BES.BlockPresence.OptSingle},
 				data[4:], index + 1)
 
 	def parse_block_mesh(self, data, index):
@@ -225,8 +240,8 @@ class BES(object):
 		logging.log(logging.VERBOSE, "{}Mesh ({} B) - Material: {:08x}".format(
 			" "*(index*2), len(data), material))
 
-		self.parse_blocks({0x0032 : BES.BlockPresence.ReqSingle,
-				0x0033: BES.BlockPresence.ReqSingle},
+		self.parse_blocks({BES.BlockID.Vertices : BES.BlockPresence.ReqSingle,
+				BES.BlockID.Faces       : BES.BlockPresence.ReqSingle},
 				data[4:], index + 1)
 
 	def parse_block_vertices(self, data, index):
@@ -301,8 +316,8 @@ class BES(object):
 		logging.log(logging.VERBOSE, "{}Material ({} B) - Number of materials: {:08x}".format(
 			" "*(index*2), len(data), children))
 
-		self.parse_blocks({0x1001 : BES.BlockPresence.OptMultiple,
-				0x1002 : BES.BlockPresence.OptMultiple},
+		self.parse_blocks({BES.BlockID.Bitmap : BES.BlockPresence.OptMultiple,
+				BES.BlockID.PteroMat  : BES.BlockPresence.OptMultiple},
 				data[4:], index + 1)
 
 	def parse_block_bitmap(self, data, index):

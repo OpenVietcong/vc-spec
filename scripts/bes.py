@@ -46,11 +46,11 @@ def pchar_to_string(pchar):
 class BES(object):
 	class Header:
 		sig = b'BES\x00'
-		ver = b'0100\x00'
+		ver = b'0100'
 
 	class BlockID:
 		Object		= 0x0001
-		Unk30		= 0x0030
+		Model		= 0x0030
 		Mesh		= 0x0031
 		Vertices	= 0x0032
 		Faces		= 0x0033
@@ -117,16 +117,13 @@ class BES(object):
 		return st_unpack(data[:st_len])
 
 	def parse_header(self):
-		(sig, ver, unk1, unk2) = BES.unpack("<4s5sI3s", self.data)
+		(sig, ver, unk1, unk2) = BES.unpack("<4s4sII", self.data)
 
 		if sig != BES.Header.sig:
 			raise RuntimeError("  Invalid header signature")
 
 		if ver != BES.Header.ver:
 			logging.warning("  Unsupported BES version: {}".format(ver))
-
-		if unk2 != b'\x00\x00\x00':
-			logging.warning("  Expected trailing zero bytes in header")
 
 		return ver
 
@@ -147,8 +144,8 @@ class BES(object):
 	def parse_block_by_label(self, label, subblock, index):
 		if   label == BES.BlockID.Object:
 			return self.parse_block_object(subblock, index)
-		elif label == BES.BlockID.Unk30:
-			return self.parse_block_unk30(subblock, index)
+		elif label == BES.BlockID.Model:
+			return self.parse_block_model(subblock, index)
 		elif label == BES.BlockID.Mesh:
 			return self.parse_block_mesh(subblock, index)
 		elif label == BES.BlockID.Vertices:
@@ -222,7 +219,7 @@ class BES(object):
 			" "*(index*2), len(data), children, name_size,	pchar_to_string(name)))
 
 		res = self.parse_blocks({BES.BlockID.Object    : BES.BlockPresence.OptMultiple,
-					BES.BlockID.Unk30      : BES.BlockPresence.OptSingle,
+					BES.BlockID.Model      : BES.BlockPresence.OptSingle,
 					BES.BlockID.Properties : BES.BlockPresence.OptSingle,
 					BES.BlockID.Unk35      : BES.BlockPresence.OptSingle,
 					BES.BlockID.Unk38      : BES.BlockPresence.OptSingle,
@@ -230,18 +227,23 @@ class BES(object):
 					data[8 + name_size:], index + 1)
 
 		if len(res[BES.BlockID.Object]) != children:
-			logging.error("Number of object children does not match")
+			logging.error("{}Number of object children does not match".format(
+				" "*(index*2)))
 
-	def parse_block_unk30(self, data, index):
+	def parse_block_model(self, data, index):
 		(children,) = BES.unpack("<I", data)
-		logging.log(logging.VERBOSE, "{}Unk30 ({} B) - Number of meshes: {:08x}".format(
+		logging.log(logging.VERBOSE, "{}Model ({} B) - Number of meshes: {:08x}".format(
 			" "*(index*2), len(data), children))
 
-		self.parse_blocks({BES.BlockID.Mesh    : BES.BlockPresence.OptMultiple,
-				BES.BlockID.Properties : BES.BlockPresence.ReqSingle,
-				BES.BlockID.Unk35      : BES.BlockPresence.ReqSingle,
-				BES.BlockID.Unk36      : BES.BlockPresence.OptSingle},
-				data[4:], index + 1)
+		res = self.parse_blocks({BES.BlockID.Mesh      : BES.BlockPresence.OptMultiple,
+					BES.BlockID.Properties : BES.BlockPresence.ReqSingle,
+					BES.BlockID.Unk35      : BES.BlockPresence.ReqSingle,
+					BES.BlockID.Unk36      : BES.BlockPresence.OptSingle},
+					data[4:], index + 1)
+
+		if len(res[BES.BlockID.Mesh]) != children:
+			logging.error("{}Number of model children does not match".format(
+				" "*(index*2)))
 
 	def parse_block_mesh(self, data, index):
 		(material,) = BES.unpack("<I", data)

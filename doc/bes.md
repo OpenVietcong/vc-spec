@@ -19,20 +19,20 @@ Total size: 16
 | Offset | Name      | Type     |
 |--------|-----------|----------|
 | 0      | Signature | CHAR[4]  |
-| 4      | Version   | CHAR[5]  |
+| 4      | Version   | CHAR[4]  |
 | 9      | Unknown   | UINT32LE |
-| 13     | Unknown   | CHAR[3]  |
+| 13     | Unknown   | UINT32LE |
 
 1. Signature identifying the BES file. Contains fixed string 'BES' with NULL character at the end (0x42 0x45 0x53 0x00).
 2. Version of this BES file. VietCong knows following versions:
-  - 0004 (0x30 0x30 0x30 0x34 0x00)
-  - 0005 (0x30 0x30 0x30 0x35 0x00)
-  - 0006 (0x30 0x30 0x30 0x36 0x00)
-  - 0007 (0x30 0x30 0x30 0x37 0x00)
-  - 0008 (0x30 0x30 0x30 0x38 0x00)
-  - 0100 (0x30 0x31 0x30 0x30 0x00)
-3. Unknown word (or four chars?).
-4. Unknown (always zeros).
+  - 0004 (0x30 0x30 0x30 0x34)
+  - 0005 (0x30 0x30 0x30 0x35)
+  - 0006 (0x30 0x30 0x30 0x36)
+  - 0007 (0x30 0x30 0x30 0x37)
+  - 0008 (0x30 0x30 0x30 0x38)
+  - 0100 (0x30 0x31 0x30 0x30)
+3. Unknown
+4. Unknown
 
 Preview
 -------
@@ -62,7 +62,7 @@ Here is quick reference table of known data sub-blocks:
 |----------------|--------|
 | Object         | 0x0001 |
 | ...            | ...    |
-| Unknown 0x030  | 0x0030 |
+| Model          | 0x0030 |
 | Mesh           | 0x0031 |
 | Vertices       | 0x0032 |
 | Faces          | 0x0033 |
@@ -96,13 +96,13 @@ Here is quick reference table of known data sub-blocks:
 
 Other data sub-blocks may follow. Known sub-blocks:
 * Object (any)
-* Unknown 0x030 (1 at most)
+* Model (1 at most)
 * Properties (1 at most)
 * Unknown 0x035 (1 at most)
 * Unknown 0x038 (1 at most)
 * Material (1 at most)
 
-### Unknown 0x030
+### Model
 
 | Offset | Name          | Type     |
 |--------|---------------|----------|

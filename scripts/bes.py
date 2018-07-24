@@ -46,7 +46,7 @@ def pchar_to_string(pchar):
 class BES(object):
 	class Header:
 		sig = b'BES\x00'
-		ver = b'0100'
+		vers = [b'0100']
 
 	class BlockID:
 		Object		= 0x0001
@@ -109,6 +109,7 @@ class BES(object):
 		self.vertices = []
 		self.faces = []
 		self.data = data
+		self.ver = b'0100'
 
 	def unpack(fmt, data):
 		st_fmt = fmt
@@ -122,9 +123,11 @@ class BES(object):
 		if sig != BES.Header.sig:
 			raise RuntimeError("  Invalid header signature")
 
-		if ver != BES.Header.ver:
-			logging.warning("  Unsupported BES version: {}".format(ver))
+		if ver not in BES.Header.vers:
+			logging.error("  Unsupported BES version: {}".format(ver))
+			ver = None
 
+		self.ver = ver
 		return ver
 
 	def parse_preview(self):
@@ -189,8 +192,8 @@ class BES(object):
 			subblock = data[start + 8: start + size]
 
 			if label not in blocks:
-				logging.warning("{}Unexpected block {:04X} at this location".format(
-					" "*(index*2), label))
+				logging.warning("{}Unexpected block {:04X} [{} B] at this location".format(
+					" "*(index*2), label, size))
 			else:
 				if (blocks[label] == BES.BlockPresence.OptSingle or
 				blocks[label] == BES.BlockPresence.ReqSingle):
@@ -423,7 +426,8 @@ def processFile(fileName, extract):
 	try:
 		data = open(fileName, "rb").read()
 		bes = BES(data)
-		version = bes.parse_header()
+		if not bes.parse_header():
+			return
 		preview = bes.parse_preview()
 		if extract:
 			savePreview(preview, fileName)

@@ -144,60 +144,63 @@ class BES(object):
 	def parse_block_desc(self, data):
 		return BES.unpack("<II", data)
 
-	def process_block_by_label(self, label, subblock, index):
+	def parse_block_by_label(self, label, subblock, index):
 		if   label == BES.BlockID.Object:
-			self.parse_block_object(subblock, index)
+			return self.parse_block_object(subblock, index)
 		elif label == BES.BlockID.Unk30:
-			self.parse_block_unk30(subblock, index)
+			return self.parse_block_unk30(subblock, index)
 		elif label == BES.BlockID.Mesh:
-			self.parse_block_mesh(subblock, index)
+			return self.parse_block_mesh(subblock, index)
 		elif label == BES.BlockID.Vertices:
-			self.parse_block_vertices(subblock, index)
+			return self.parse_block_vertices(subblock, index)
 		elif label == BES.BlockID.Faces:
-			self.parse_block_faces(subblock, index)
+			return self.parse_block_faces(subblock, index)
 		elif label == BES.BlockID.Properties:
-			self.parse_block_properties(subblock, index)
+			return self.parse_block_properties(subblock, index)
 		elif label == BES.BlockID.Unk35:
-			self.parse_block_unk35(subblock, index)
+			return self.parse_block_unk35(subblock, index)
 		elif label == BES.BlockID.Unk36:
-			self.parse_block_unk36(subblock, index)
+			return self.parse_block_unk36(subblock, index)
 		elif label == BES.BlockID.Unk38:
-			self.parse_block_unk38(subblock, index)
+			return self.parse_block_unk38(subblock, index)
 		elif label == BES.BlockID.UserInfo:
-			self.parse_block_user_info(subblock, index)
+			return self.parse_block_user_info(subblock, index)
 		elif label == BES.BlockID.Material:
-			self.parse_block_material(subblock, index)
+			return self.parse_block_material(subblock, index)
 		elif label == BES.BlockID.Bitmap:
-			self.parse_block_bitmap(subblock, index)
+			return self.parse_block_bitmap(subblock, index)
 		elif label == BES.BlockID.PteroMat:
-			self.parse_block_ptero_mat(subblock, index)
+			return self.parse_block_ptero_mat(subblock, index)
 		else:
 			logging.warning("Unknown block {}".format(hex(label)))
 			hex_dump(subblock, index)
 
 	def parse_blocks(self, blocks, data, index):
-		# Init info about parsed blocks
-		blocks_parsed = dict()
+		# Init return values
+		ret = dict()
 		for label in blocks:
-			blocks_parsed[label] = False
+			if (blocks[label] == BES.BlockPresence.OptSingle or
+			blocks[label] == BES.BlockPresence.ReqSingle):
+				ret[label] = None
+			else:
+				ret[label] = []
 
 		# Search for all blocks
 		start = 0
 		while len(data[start:]) > 0:
 			(label, size) = self.parse_block_desc(data[start:])
+			subblock = data[start + 8: start + size]
 
 			if label not in blocks:
 				logging.warning("{}Unexpected block {:04X} at this location".format(
 					" "*(index*2), label))
 			else:
 				if (blocks[label] == BES.BlockPresence.OptSingle or
-				blocks[label] == BES.BlockPresence.ReqSingle) and blocks_parsed[label] == True:
-					logging.warning("{}Invalid number of occurrences of block {:04X} (max 1)".format(
-						" "*(index*2), label))
-				blocks_parsed[label] = True
-
-			subblock = data[start + 8: start + size]
-			self.process_block_by_label(label, subblock, index)
+				blocks[label] == BES.BlockPresence.ReqSingle):
+					blocks.pop(label)
+					ret[label] = self.parse_block_by_label(label, subblock, index)
+				else:
+					ret[label].append(self.parse_block_by_label(label, subblock, index))
 			start += size
 
 		if start != len(data):
@@ -206,9 +209,11 @@ class BES(object):
 
 		# Check if all required blocks were found in this block
 		for label in blocks:
-			if (blocks[label] == BES.BlockPresence.ReqSingle or
-			blocks[label] == BES.BlockPresence.ReqMultiple) and blocks_parsed[label] == False:
-				logging.warning("Invalid number of occurrences of block {:04X} (min 1)".format(label))
+			if ((blocks[label] == BES.BlockPresence.ReqSingle) or
+			(blocks[label] == BES.BlockPresence.ReqMultiple and label not in ret)):
+				logging.warning("Invalid number of occurrences of block {:04X}".format(label))
+
+		return ret
 
 	def parse_block_object(self, data, index):
 		(children, name_size) = BES.unpack("<II", data)
@@ -216,13 +221,16 @@ class BES(object):
 		logging.log(logging.VERBOSE, "{}Object ({} B) - children: {}, name({}): {}".format(
 			" "*(index*2), len(data), children, name_size,	pchar_to_string(name)))
 
-		self.parse_blocks({BES.BlockID.Object  : BES.BlockPresence.OptMultiple,
-				BES.BlockID.Unk30      : BES.BlockPresence.OptSingle,
-				BES.BlockID.Properties : BES.BlockPresence.OptSingle,
-				BES.BlockID.Unk35      : BES.BlockPresence.OptSingle,
-				BES.BlockID.Unk38      : BES.BlockPresence.OptSingle,
-				BES.BlockID.Material   : BES.BlockPresence.OptSingle},
-				data[8 + name_size:], index + 1)
+		res = self.parse_blocks({BES.BlockID.Object    : BES.BlockPresence.OptMultiple,
+					BES.BlockID.Unk30      : BES.BlockPresence.OptSingle,
+					BES.BlockID.Properties : BES.BlockPresence.OptSingle,
+					BES.BlockID.Unk35      : BES.BlockPresence.OptSingle,
+					BES.BlockID.Unk38      : BES.BlockPresence.OptSingle,
+					BES.BlockID.Material   : BES.BlockPresence.OptSingle},
+					data[8 + name_size:], index + 1)
+
+		if len(res[BES.BlockID.Object]) != children:
+			logging.error("Number of object children does not match")
 
 	def parse_block_unk30(self, data, index):
 		(children,) = BES.unpack("<I", data)

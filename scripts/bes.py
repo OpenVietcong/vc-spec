@@ -300,8 +300,12 @@ class BES(object):
 			logging.error("{}Block size do not match".format(" "*(index*2)))
 
 	def parse_block_unk36(self, data, index):
-		logging.log(logging.VERBOSE, "{}Unk36 ({} B)".format(
-			" "*(index*2), len(data)))
+		(unknown,) = BES.unpack("<I", data)
+		logging.log(logging.VERBOSE, "{}Unk36 ({} B - unknown: {:08x})".format(
+			" "*(index*2), len(data), unknown))
+
+		if len(data) != 4:
+			logging.error("{}Block size do not match".format(" "*(index*2)))
 
 	def parse_block_unk38(self, data, index):
 		logging.log(logging.VERBOSE, "{}Unk38 ({} B)".format(
@@ -329,9 +333,13 @@ class BES(object):
 		logging.log(logging.VERBOSE, "{}Material ({} B) - Number of materials: {:08x}".format(
 			" "*(index*2), len(data), children))
 
-		self.parse_blocks({BES.BlockID.Bitmap : BES.BlockPresence.OptMultiple,
-				BES.BlockID.PteroMat  : BES.BlockPresence.OptMultiple},
-				data[4:], index + 1)
+		res = self.parse_blocks({BES.BlockID.Bitmap  : BES.BlockPresence.OptMultiple,
+					BES.BlockID.PteroMat : BES.BlockPresence.OptMultiple},
+					data[4:], index + 1)
+
+		if len(res[BES.BlockID.Bitmap]) + len(res[BES.BlockID.PteroMat]) != children:
+			logging.error("{}Number of material children does not match".format(
+				" "*(index*2)))
 
 	def parse_block_bitmap(self, data, index):
 		(unk1, unk2, bType) = BES.unpack("<I4sI", data)

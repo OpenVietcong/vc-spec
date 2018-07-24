@@ -250,7 +250,7 @@ Purpose of these properties is unknown.
 | 8      | Unknown   | UINT32LE |
 
 1. Label of this sub-block - always 0x0036
-2. Size of this sub-block (including this field and label)
+2. Size of this sub-block (including this field and label) - always 0xC (12B)
 3. Unknown
 
 ### Unknown 0x038
@@ -267,9 +267,6 @@ Purpose of these properties is unknown.
 
 ### User info
 
-Space between 'Name' and 'Comment' is filled with zeros
-
-
 | Offset | Name           | Type     |
 |--------|----------------|----------|
 | 0      | Label          | UINT32LE |
@@ -277,7 +274,7 @@ Space between 'Name' and 'Comment' is filled with zeros
 | 8      | Name length    | UINT32LE |
 | 12     | Comment length | UINT32LE |
 | 16     | Unknown        | UINT32LE |
-| 20     | Name           | CHAR[]   |
+| 20     | Name           | CHAR[64] |
 | 84     | Comment        | CHAR[]   |
 
 1. Label of this sub-block - always 0x0070
@@ -285,7 +282,7 @@ Space between 'Name' and 'Comment' is filled with zeros
 3. Length of 'Name' string. Should not exceed 64 bytes.
 4. Length of 'Comment' string.
 5. Unknown
-6. Name (max 64)
+6. Name (max 64 - remaining bytes are filled by zero)
 7. Comment
 
 ### Material

@@ -20,8 +20,8 @@ Total size: 16
 |--------|-----------|----------|
 | 0      | Signature | CHAR[4]  |
 | 4      | Version   | CHAR[4]  |
-| 9      | Unknown   | UINT32LE |
-| 13     | Unknown   | UINT32LE |
+| 8      | Unknown   | UINT32LE |
+| 12     | Unknown   | UINT32LE |
 
 1. Signature identifying the BES file. Contains fixed string 'BES' with NULL character at the end (0x42 0x45 0x53 0x00).
 2. Version of this BES file. VietCong knows following versions:
@@ -67,7 +67,7 @@ Here is quick reference table of known data sub-blocks:
 | Vertices       | 0x0032 |
 | Faces          | 0x0033 |
 | Properties     | 0x0034 |
-| Unknown 0x035  | 0x0035 |
+| Transformation | 0x0035 |
 | Unknown 0x036  | 0x0036 |
 | ...            | ...    |
 | Unknown 0x038  | 0x0038 |
@@ -98,7 +98,7 @@ Other data sub-blocks may follow. Known sub-blocks:
 * Object (any)
 * Model (1 at most)
 * Properties (1 at most)
-* Unknown 0x035 (1 at most)
+* Transformation (1 at most)
 * Unknown 0x038 (1 at most)
 * Material (1 at most)
 
@@ -117,7 +117,7 @@ Other data sub-blocks may follow. Known sub-blocks:
 Other data sub-blocks may follow. Known sub-blocks:
 * Mesh (any)
 * Properties (1)
-* Unknown 0x035 (1)
+* Transformation (1)
 * Unknown 0x036 (1 at most)
 
 ### Mesh
@@ -223,23 +223,27 @@ Purpose of these properties is unknown.
 3. Length of 'Text' string
 4. String containing user defined properties
 
-### Unknown 0x035
+### Transformation
 
-| Offset | Name      | Type         |
-|--------|-----------|--------------|
-| 0      | Label     | UINT32LE     |
-| 4      | Blok size | UINT32LE     |
-| 8      | Position1 | FLOAT32LE[3] |
-| 20     | Unknown1  | CHAR[64]     |
-| 84     | Position2 | FLOAT32LE[3] |
-| 96     | Unknown2  | CHAR[4]      |
+| Offset | Name        | Type          |
+|--------|-------------|---------------|
+| 0      | Label       | UINT32LE      |
+| 4      | Blok size   | UINT32LE      |
+| 8      | Translation | FLOAT32LE[3]  |
+| 20     | Rotation    | FLOAT32LE[3]  |
+| 32     | Scale       | FLOAT32LE[3]  |
+| 44     | Unknown1    | FLOAT32LE[10] |
+| 84     | Translation | FLOAT32LE[3]  |
+| 96     | Unknown2    | FLOAT32LE[3]  |
 
 1. Label of this sub-block - always 0x0035
-2. Size of this sub-block (including this field and label) - always 0x64 (100B)
-3. Object position in scene - coordinates are in the following order: x, y, z
-4. Unknown
-5. Same values as 3.
-6. Unknown - usually 0x3F800000
+2. Size of this sub-block (including this field and label) - always 0x6C (108B)
+3. Object translation in scene - transformation values are in the following order: x, y, z
+4. Object rotation (in radians) in scene - transformation values are in the following order: x, y, z
+5. Object scale - transformation values are in the following order: x, y, z
+6. Unknown
+7. Same values as 3.
+8. Unknown
 
 ### Unknown 0x036
 

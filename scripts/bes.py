@@ -55,7 +55,7 @@ class BES(object):
 		Vertices	= 0x0032
 		Faces		= 0x0033
 		Properties	= 0x0034
-		Unk35		= 0x0035
+		Transformation	= 0x0035
 		Unk36		= 0x0036
 		Unk38		= 0x0038
 		UserInfo	= 0x0070
@@ -157,8 +157,8 @@ class BES(object):
 			return self.parse_block_faces(subblock, index)
 		elif label == BES.BlockID.Properties:
 			return self.parse_block_properties(subblock, index)
-		elif label == BES.BlockID.Unk35:
-			return self.parse_block_unk35(subblock, index)
+		elif label == BES.BlockID.Transformation:
+			return self.parse_block_transformation(subblock, index)
 		elif label == BES.BlockID.Unk36:
 			return self.parse_block_unk36(subblock, index)
 		elif label == BES.BlockID.Unk38:
@@ -221,12 +221,12 @@ class BES(object):
 		logging.log(logging.VERBOSE, "{}Object ({} B) - children: {}, name({}): {}".format(
 			" "*(index*2), len(data), children, name_size,	pchar_to_string(name)))
 
-		res = self.parse_blocks({BES.BlockID.Object    : BES.BlockPresence.OptMultiple,
-					BES.BlockID.Model      : BES.BlockPresence.OptSingle,
-					BES.BlockID.Properties : BES.BlockPresence.OptSingle,
-					BES.BlockID.Unk35      : BES.BlockPresence.OptSingle,
-					BES.BlockID.Unk38      : BES.BlockPresence.OptSingle,
-					BES.BlockID.Material   : BES.BlockPresence.OptSingle},
+		res = self.parse_blocks({BES.BlockID.Object        : BES.BlockPresence.OptMultiple,
+					BES.BlockID.Model          : BES.BlockPresence.OptSingle,
+					BES.BlockID.Properties     : BES.BlockPresence.OptSingle,
+					BES.BlockID.Transformation : BES.BlockPresence.OptSingle,
+					BES.BlockID.Unk38          : BES.BlockPresence.OptSingle,
+					BES.BlockID.Material       : BES.BlockPresence.OptSingle},
 					data[8 + name_size:], index + 1)
 
 		if len(res[BES.BlockID.Object]) != children:
@@ -238,10 +238,10 @@ class BES(object):
 		logging.log(logging.VERBOSE, "{}Model ({} B) - Number of meshes: {:08x}".format(
 			" "*(index*2), len(data), children))
 
-		res = self.parse_blocks({BES.BlockID.Mesh      : BES.BlockPresence.OptMultiple,
-					BES.BlockID.Properties : BES.BlockPresence.ReqSingle,
-					BES.BlockID.Unk35      : BES.BlockPresence.ReqSingle,
-					BES.BlockID.Unk36      : BES.BlockPresence.OptSingle},
+		res = self.parse_blocks({BES.BlockID.Mesh          : BES.BlockPresence.OptMultiple,
+					BES.BlockID.Properties     : BES.BlockPresence.ReqSingle,
+					BES.BlockID.Transformation : BES.BlockPresence.ReqSingle,
+					BES.BlockID.Unk36          : BES.BlockPresence.OptSingle},
 					data[4:], index + 1)
 
 		if len(res[BES.BlockID.Mesh]) != children:
@@ -291,13 +291,21 @@ class BES(object):
 			logging.error("{}Block size do not match: {} vs {}".format(
 				" "*(index*2), len(data), count + 4))
 
-	def parse_block_unk35(self, data, index):
-		(x, y, z) = BES.unpack("<fff", data)
-		logging.log(logging.VERBOSE, "{}Unk35 ({} B) - position: [{}][{}][{}]".format(
-			" "*(index*2), len(data), x, y, z))
-
+	def parse_block_transformation(self, data, index):
 		if len(data) != 100:
 			logging.error("{}Block size do not match".format(" "*(index*2)))
+
+		t = BES.unpack("<fff", data[00:12]) # translation
+		r = BES.unpack("<fff", data[12:24]) # rotation
+		s = BES.unpack("<fff", data[24:36]) # scale
+
+		sPrint = ("{}Transformation ({} B)\n{}  translation: [{}][{}][{}]\n"
+			"{}  rotation: [{}][{}][{}]\n{}  scale: [{}][{}][{}]")
+		sPrint = sPrint.format(" "*(index*2), len(data),
+			" "*(index*2), t[0], t[1], t[2],
+			" "*(index*2), r[0], r[1], r[2],
+			" "*(index*2), s[0], s[1], s[2])
+		logging.log(logging.VERBOSE, sPrint),
 
 	def parse_block_unk36(self, data, index):
 		(unknown,) = BES.unpack("<I", data)

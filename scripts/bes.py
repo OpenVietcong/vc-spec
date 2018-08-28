@@ -41,7 +41,10 @@ def hex_dump(data, index):
 	print()
 
 def pchar_to_string(pchar):
-	return str(pchar, 'ascii').strip(chr(0))
+	"""
+	Convert C Windows-1250 string into Python string
+	"""
+	return str(pchar, 'cp1250').strip(chr(0))
 
 class BES(object):
 	class Header:

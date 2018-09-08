@@ -361,7 +361,7 @@ Tile and mirror can not be used at the same time.
 | 8      | Sides        | UINT32LE |
 | 12     | Type         | UINT32LE |
 | 16     | CollisionMat | CHAR[4]  |
-| 20     | Unknown      | UINT32LE |
+| 20     | Transparency | UINT32LE |
 | 24     | Vegetation   | CHAR[4]  |
 | 28     | Name length  | UINT32LE |
 | 32     | Name         | CHAR[]   |
@@ -379,7 +379,8 @@ Tile and mirror can not be used at the same time.
   * 22 - Environment #2
   * 23 - LightMap (Engine Lights)
 5. Collision Material (only first 2 bytes are valid, the rest are zeros)
-6. Transparency type:
+6. Transparency type. Description can be found at
+[vietcong.info](http://www.vietcong.info/portal/forum/viewthread.php?thread_id=344&pid=4749#post_4749):
   * 0x202D: - none - (opaque)
   * 0x3023: #0 - transparent, zbufwrite, sort
   * 0x3123: #1 - transparent, zbufwrite, sort, 1-bit alpha

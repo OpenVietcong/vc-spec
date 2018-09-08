@@ -82,6 +82,12 @@ class BES(object):
 			"Environment #1", "LightMap", "UNKNOWN",
 			"Environment #2", "LightMap (Engine Lights)"]
 		offset = 16
+		transparency = { 0x202D : "- none - (opaque)",
+				 0x3023 : "#0 - transparent, zbufwrite, sort",
+				 0x3123 : "#1 - transparent, zbufwrite, sort, 1-bit alpha",
+				 0x3223 : "#2 - translucent, no_zbufwrite, sort",
+				 0x3323 : "#3 - transparent, zbufwrite, nosort, 1-bit alpha",
+				 0x3423 : "#4 - translucent, add with background, no_zbufwrite, sort"}
 
 		def parseTexture(data, index, texID):
 			(coord, name_size) = BES.unpack("<II", data)
@@ -393,7 +399,7 @@ class BES(object):
 		logging.log(logging.VERBOSE, sPrint)
 
 	def parse_block_ptero_mat(self, data, index):
-		(tSides, pType, collisMat, unk4, veget) = BES.unpack("<II4sI4s", data)
+		(tSides, pType, collisMat, transType, veget) = BES.unpack("<II4sI4s", data)
 		(name_size,) = BES.unpack("<I", data[20:])
 		(name,) = BES.unpack("<" + str(name_size) + "s", data[24:])
 
@@ -408,6 +414,11 @@ class BES(object):
 			", grow type: '{}', grass type: '{}'").format(
 			" "*(index*2), len(data), name_size, pchar_to_string(name), tSides + 1,
 			chr(collisMat[0]), chr(collisMat[1]), chr(veget[0]), chr(veget[1]))
+		if transType not in BES.PteroMat.transparency:
+			logging.warning("Unknown transparency type {:08x}".format(transType))
+		else:
+			sPrint += ", transparency '{}'".format(BES.PteroMat.transparency[transType])
+
 		ptr = 24 + name_size
 		for texID in range(32):
 			if pType & (1 << texID):

@@ -368,7 +368,7 @@ Tile and mirror can not be used at the same time.
 
 1. Label of this sub-block - always 0x1002
 2. Size of this sub-block (including this field and label)
-3. Number of material sizes: 0 = 1 sided, 1 = 2-sided. Other values are invalid.
+3. Number of material sides: 0 = 1 sided, 1 = 2-sided. Other values are invalid.
 4. Texture type bitfield. Here is a sorted list of textures contained in this material:
   * 16 - Diffuse #1 - Ground
   * 17 - Diffuse #2 - Multitexture
@@ -379,18 +379,14 @@ Tile and mirror can not be used at the same time.
   * 22 - Environment #2
   * 23 - LightMap (Engine Lights)
 5. Collision Material (only first 2 bytes are valid, the rest are zeros)
-6. Unknown
-Here is description of some **bytes** - bytes not listed here are always zero:
-  * 0 - unknown
-  * 1 - unknown
-  * 2 - Type of transparent (represented by value):
-    * 0: - none - (opaque)
-    * 1: #0 - transparent, zbufwrite, sort
-    * 2: #1 - transparent, zbufwrite, sort, 1-bit alpha
-    * 3: #2 - translucent, no\_zbufwrite, sort
-    * 4: #3 - transparent, zbufwrite, nosort, 1-bit alpha
-    * 5: #4 - translucent, add with background, no\_zbufwrite, sort
-  * 3 - unknown
+6. Transparency type:
+  * 0x202D: - none - (opaque)
+  * 0x3023: #0 - transparent, zbufwrite, sort
+  * 0x3123: #1 - transparent, zbufwrite, sort, 1-bit alpha
+  * 0x3223: #2 - translucent, no\_zbufwrite, sort
+  * 0x3323: #3 - transparent, zbufwrite, nosort, 1-bit alpha
+  * 0x3423: #4 - translucent, add with background, no\_zbufwrite, sort
+  * other: unknown
 7. Grow/Grass Type (only first 2 **bytes** are valid, the rest are zeros)
   * 0 - Grow Type
   * 1 - Grass Type

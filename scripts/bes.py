@@ -463,9 +463,7 @@ def processFile(fileName, extract):
 			savePreview(preview, fileName)
 		else:
 			bes.parse_data()
-	except FileNotFoundError as e:
-		logging.error(e)
-	except RuntimeError as e:
+	except Exception as e:
 		logging.error(e)
 
 if __name__ == "__main__":

@@ -281,7 +281,12 @@ class BES(object):
 				" "*(index*2)))
 
 	def parse_block_faces(self, data, index):
-		(count, ) = BES.unpack("<I", data)
+		"""
+		Parse Faces block and return list of tuples.
+		Each tuple means one face made of 3 integers (vertices IDs)
+		"""
+		(count,) = BES.unpack("<I", data)
+		faces = []
 
 		logging.log(logging.VERBOSE, "{}Faces ({} B) - count: {}".format(
 			" "*(index*2), len(data), count))
@@ -289,6 +294,15 @@ class BES(object):
 		if len(data[4:]) != count * 12:
 			logging.error("{}Block size do not match".format(
 				" "*(index*2)))
+			return faces
+
+		ptr = 4
+		for i in range(count):
+			face = BES.unpack("<III", data[ptr:])
+			faces.append(face)
+			ptr += 12
+
+		return faces
 
 	def parse_block_properties(self, data, index):
 		(count, ) = BES.unpack("<I", data)

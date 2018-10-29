@@ -46,6 +46,30 @@ def pchar_to_string(pchar):
 	"""
 	return str(pchar, 'cp1250').strip(chr(0))
 
+class BESVertex(object):
+	class Flags:
+		XYZ	= 0x002
+		Normal	= 0x010
+
+		Tex0	= 0x000
+		Tex1	= 0x100
+		Tex2	= 0x200
+		Tex3	= 0x300
+		Tex4	= 0x400
+		Tex5	= 0x500
+		Tex6	= 0x600
+		Tex7	= 0x700
+		Tex8	= 0x800
+
+		TexcountMask	= 0xf00
+		TexcountShift	= 8
+		TexcountMax	= 8
+
+	def __init__(self, coords, normals, uv = []):
+		self.coords = coords
+		self.normals = normals
+		self.uv = uv
+
 class BES(object):
 	class Header:
 		sig = b'BES\x00'
@@ -267,18 +291,52 @@ class BES(object):
 				data[4:], index + 1)
 
 	def parse_block_vertices(self, data, index):
-		(count, size, vType) = BES.unpack("<III", data)
-		texCnt = (vType >> 8) & 0xFF
+		"""
+		Parse Vertices block and return list of BESVertex instances.
+		Each instance is made of  x,y,z coords, normals and uv coords (variable length)
+		"""
+		(count, size, flags) = BES.unpack("<III", data)
+		texCnt = (flags & BESVertex.Flags.TexcountMask) >> BESVertex.Flags.TexcountShift
+		flagsMin = BESVertex.Flags.XYZ | BESVertex.Flags.Normal
+		flagsMax = flagsMin | BESVertex.Flags.TexcountMask
+		vertices = []
 
-		logging.log(logging.VERBOSE, "{}Vertices ({} B) - count: {}, size: {}, type: {:08x}".format(
-			" "*(index*2), len(data), count, size, vType))
+		logging.log(logging.VERBOSE, "{}Vertices ({} B) - count: {}, size: {}, flags: {:08x}".format(
+			" "*(index*2), len(data), count, size, flags))
 
+		if (flags & flagsMin) != flagsMin or (flags | flagsMax) != flagsMax:
+			logging.error("{}Unsupported vertex flags: {:08x}".format(
+				" "*(index*2), flags))
+			return vertices
+		if texCnt > BESVertex.Flags.TexcountMax:
+			logging.error("{}Texture count over limit: {}".format(
+				" "*(index*2), texCnt))
+			return vertices
 		if 24 + 8 * texCnt != size:
 			logging.error("{}Vertex size do not match".format(
 				" "*(index*2)))
+			return vertices
 		elif len(data[12:]) != size * count:
 			logging.error("{}Block size do not match".format(
 				" "*(index*2)))
+			return vertices
+
+		ptr = 12
+		for i in range(count):
+			coords = BES.unpack("<fff", data[ptr:])
+			ptr += 12
+			normals = BES.unpack("<fff", data[ptr:])
+			ptr += 12
+
+			uv_array = []
+			for texID in range(texCnt):
+				uv = BES.unpack("<ff", data[ptr:])
+				uv_array.append(uv)
+				ptr += 8
+
+			vertices.append(BESVertex(coords, normals, uv_array))
+
+		return vertices
 
 	def parse_block_faces(self, data, index):
 		"""

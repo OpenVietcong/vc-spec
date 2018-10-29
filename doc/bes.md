@@ -5,6 +5,10 @@ File format
 
 * all strings are terminated by NULL characters
 * length of every string includes NULL character
+* some data structures are inspired by D3D8.
+For detailed definition of some structures mentioned in this file see
+[d3dtypes.h](https://github.com/wine-mirror/wine/blob/master/include/d3dtypes.h)
+file of Wine project.
 
 This file is made of:
 * Header
@@ -139,44 +143,48 @@ Other data sub-blocks may follow. Known sub-blocks:
 
 ### Vertices
 
-| Offset | Name        | Type     |
-|--------|-------------|----------|
-| 0      | Label       | UINT32LE |
-| 4      | Blok size   | UINT32LE |
-| 8      | Vertices    | UINT32LE |
-| 12     | Size        | UINT32LE |
-| 16     | Properties  | UINT32LE |
+This block contains mesh vertices, which are heavily inspired by D3D8.
+
+| Offset | Name      | Type     |
+|--------|-----------|----------|
+| 0      | Label     | UINT32LE |
+| 4      | Blok size | UINT32LE |
+| 8      | Vertices  | UINT32LE |
+| 12     | Size      | UINT32LE |
+| 16     | Flags     | UINT32LE |
 
 1. Label of this sub-block - always 0x0032
 2. Size of this sub-block (including this field and label)
 3. Number of vertices in this data block
 4. Size of vertex structure.
 Should be 24 + 8 * number\_of\_textures (see below).
-5. Vertices properties.
-Here is description of some **bytes** - bytes not listed here are always zero:
-  * 0 - always 0x12
-  * 1 - number of textures used by material (see 'Type' field of Bitmap or PteroMat).
+5. Vertex flags (*D3DFVF*).
+BES supports following flags only (all of these flags must be set):
+ * D3DFVF\_XYZ (0x002)
+ * D3DFVF\_NORMAL (0x010)
+ * D3DFVF\_TEXn (0x000 - 0x800) - number of textures used by material (see 'Type' field of Bitmap or PteroMat).
 
-Vertices data structures follows:
+Vertices data structures follows.
+This structure is based on *D3DVERTEX*, with difference in uv coords (see below) :
 
-| Offset | Name       | Type        |
-|--------|------------|-------------|
-| 0      | Position x | FLOAT32LE   |
-| 4      | Position y | FLOAT32LE   |
-| 8      | Position z | FLOAT32LE   |
-| 12     | Unknown    | FLOAT32LE   |
-| 16     | Unknown    | FLOAT32LE   |
-| 20     | Unknown    | FLOAT32LE   |
-| 24     | UV mapping | FLOAT32LE[] |
+| Offset | Name      | Type        |
+|--------|-----------|-------------|
+| 0      | x coord   | FLOAT32LE   |
+| 4      | y coord   | FLOAT32LE   |
+| 8      | z coord   | FLOAT32LE   |
+| 12     | x normal  | FLOAT32LE   |
+| 16     | y normal  | FLOAT32LE   |
+| 20     | z normal  | FLOAT32LE   |
+| 24     | uv coords | FLOAT32LE[] |
 
-1. 'X' vertex coordinate.
-2. 'Y' vertex coordinate.
-3. 'Z' vertex coordinate.
-4. Unknown
-5. Unknown
-6. Unknown
-7. UV mapping.
-Contains two float coordinates ('U' and 'V') for each texture (see vertices 'Properties' for number of textures).
+1. 'X' vertex homogeneous coordinate.
+2. 'Y' vertex homogeneous coordinate.
+3. 'Z' vertex homogeneous coordinate.
+4. 'X' vertex normal coordinate.
+5. 'Y' vertex normal coordinate.
+6. 'Z' vertex normal coordinate.
+7. 'UV' vertex texture coordinates.
+Contains two float coordinates ('U' and 'V') for each texture (see vertices 'Flags' for number of textures).
 
 ### Faces
 

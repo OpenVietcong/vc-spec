@@ -26,6 +26,7 @@ import argparse
 import os
 import struct
 import logging
+import math
 
 __author__ = "Jan Havran"
 
@@ -45,6 +46,52 @@ def pchar_to_string(pchar):
 	Convert C Windows-1250 string into Python string
 	"""
 	return str(pchar, 'cp1250').strip(chr(0))
+
+def trans_mat(t, r, s):
+	"""
+	Compute transformation matrix 4x4 from
+	translation, rotation and scale vectors
+	"""
+	from numpy import matmul, identity, sin, cos
+
+	mt = identity(4)
+	mr = identity(4)
+	rx = identity(4)
+	ry = identity(4)
+	rz = identity(4)
+	ms = identity(4)
+	m = identity(4)
+
+	# translation
+	mt[3][0] = t[0]
+	mt[3][1] = t[1]
+	mt[3][2] = t[2]
+
+	# rotation
+	rx[1][2] = sin(r[0])
+	rx[2][1] = -rx[1][2]
+	rx[1][1] = rx[2][2] = cos(r[0])
+
+	ry[2][0] = sin(r[1])
+	ry[0][2] = -ry[2][0]
+	ry[0][0] = ry[2][2] = cos(r[1])
+
+	rz[0][1] = sin(r[2])
+	rz[1][0] = -rz[0][1]
+	rz[0][0] = rz[1][1] = cos(r[2])
+
+	mr = matmul(ry, rx)
+	mr = matmul(rz, mr)
+
+	# scale
+	ms[0][0] = s[0]
+	ms[1][1] = s[1]
+	ms[2][2] = s[2]
+
+	m = matmul(mr, mt)
+	m = matmul(ms, m)
+
+	return m
 
 class BESVertex(object):
 	class Flags:
@@ -373,20 +420,53 @@ class BES(object):
 				" "*(index*2), len(data), count + 4))
 
 	def parse_block_transformation(self, data, index):
+		"""
+		Parse Transformation block and return tuple of three tuples and one array.
+		Tuples are translation, rotation, scale and contains tranformation values (x, y, z).
+		Array is transformation matrix 4x4
+		"""
 		if len(data) != 100:
 			logging.error("{}Block size do not match".format(" "*(index*2)))
 
 		t = BES.unpack("<fff", data[00:12]) # translation
 		r = BES.unpack("<fff", data[12:24]) # rotation
 		s = BES.unpack("<fff", data[24:36]) # scale
+		m = []
+		m.append(list(BES.unpack("<ffff", data[36:52])))
+		m.append(list(BES.unpack("<ffff", data[52:68])))
+		m.append(list(BES.unpack("<ffff", data[68:84])))
+		m.append(list(BES.unpack("<ffff", data[84:100])))
+
+		mn = trans_mat(t, r, s)
+
+		for i in range(4):
+			for j in range(4):
+				if not math.isclose(m[i][j], mn[i][j], rel_tol=1e-5, abs_tol=1e-6):
+					logging.info("{}transformation matrix does not match"
+						"(index [{}][{}]\n"
+						"{}  original: {} vs computed: {}".format(
+						" "*(index*2), i, j,
+						" "*(index*2), m[i][j], mn[i][j]))
 
 		sPrint = ("{}Transformation ({} B)\n{}  translation: [{}][{}][{}]\n"
-			"{}  rotation: [{}][{}][{}]\n{}  scale: [{}][{}][{}]")
+			"{}  rotation: [{}][{}][{}]\n{}  scale: [{}][{}][{}]\n"
+			"{}  matrix:\n"
+			"{}    [{}][{}][{}][{}]\n"
+			"{}    [{}][{}][{}][{}]\n"
+			"{}    [{}][{}][{}][{}]\n"
+			"{}    [{}][{}][{}][{}]")
 		sPrint = sPrint.format(" "*(index*2), len(data),
 			" "*(index*2), t[0], t[1], t[2],
 			" "*(index*2), r[0], r[1], r[2],
-			" "*(index*2), s[0], s[1], s[2])
+			" "*(index*2), s[0], s[1], s[2],
+			" "*(index*2),
+			" "*(index*2), m[0][0], m[0][1], m[0][2], m[0][3],
+			" "*(index*2), m[1][0], m[1][1], m[1][2], m[1][3],
+			" "*(index*2), m[2][0], m[2][1], m[2][2], m[2][3],
+			" "*(index*2), m[3][0], m[3][1], m[3][2], m[3][3])
 		logging.log(logging.VERBOSE, sPrint),
+
+		return (t, r, s, m)
 
 	def parse_block_unk36(self, data, index):
 		(unknown,) = BES.unpack("<I", data)
@@ -415,7 +495,6 @@ class BES(object):
 		if len(data) != 76 + comment_size:
 			logging.error("{}Block size do not match: {} vs {}".format(
 				" "*(index*2), len(data), 76 + comment_size))
-
 
 	def parse_block_material(self, data, index):
 		(children,) = BES.unpack("<I", data)

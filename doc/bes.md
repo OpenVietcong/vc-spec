@@ -233,6 +233,10 @@ Purpose of these properties is unknown.
 
 ### Transformation
 
+This block contains transformation informations: translation, rotation and scale.
+Also the transformation matrix 4x4 is located here (which is redundant to previous vectors).
+This matrix is in some files computed wrong and thus contains significant error.
+
 | Offset | Name        | Type          |
 |--------|-------------|---------------|
 | 0      | Label       | UINT32LE      |
@@ -240,18 +244,14 @@ Purpose of these properties is unknown.
 | 8      | Translation | FLOAT32LE[3]  |
 | 20     | Rotation    | FLOAT32LE[3]  |
 | 32     | Scale       | FLOAT32LE[3]  |
-| 44     | Unknown1    | FLOAT32LE[10] |
-| 84     | Translation | FLOAT32LE[3]  |
-| 96     | Unknown2    | FLOAT32LE[3]  |
+| 44     | Matrix      | FLOAT32LE[16] |
 
 1. Label of this sub-block - always 0x0035
 2. Size of this sub-block (including this field and label) - always 0x6C (108B)
-3. Object translation in scene - transformation values are in the following order: x, y, z
-4. Object rotation (in radians) in scene - transformation values are in the following order: x, y, z
-5. Object scale - transformation values are in the following order: x, y, z
-6. Unknown
-7. Same values as 3.
-8. Unknown
+3. Object translation in scene (*D3DVECTOR*)
+4. Object rotation (in radians) in scene (*D3DVECTOR*)
+5. Object scale (*D3DVECTOR*)
+6. Transformation matrix (*D3DMATRIX*)
 
 ### Unknown 0x036
 

@@ -329,19 +329,22 @@ Other data sub-blocks may follow. Known sub-blocks:
 3. Unknown
 4. Unknown
 5. Map type bitfield.
-Here is a sorted list of maps contained in this material:
-  * 0 - Diffuse Color
-  * 1 - Displacement
-  * 2 - Bump
-  * 3 - Ambient Color
-  * 4 - Specular Color
-  * 5 - Specular Level
-  * 6 - Glossiness
-  * 7 - Self-Illumination
-  * 8 - Unknown
-  * 9 - Filter Color
-  * 10 - Reflection
-  * 11 - Refraction
+Here is a list of maps contained in this material.
+Unfortunatelly, map flags in this structure have different order than UV maps in 'Vertices' block.
+For this reason, the maps here are ordered according to order in 'Vertices' block and the flag value is written in brackets.
+Also note that 3DS Max allows to create 'Opacity' texture, but it is never exported into BES file.
+There is also unused flag 0x100, which may (or may not) be associated with 'Opacity' - probably misstake by Ptero developers:
+  * 1  - Ambient Color     (0x008)
+  * 2  - Diffuse Color     (0x001)
+  * 3  - Specular Color    (0x010)
+  * 4  - Specular Level    (0x020)
+  * 5  - Glossiness        (0x040)
+  * 6  - Self-Illumination (0x080)
+  * 7  - Filter Color      (0x200)
+  * 8  - Bump              (0x004)
+  * 9  - Reflection        (0x400)
+  * 10 - Refraction        (0x800)
+  * 11 - Displacement      (0x002)
 
 Set bit in field 'Type' indicates that material contains appropriate map.
 All maps have the same structure:

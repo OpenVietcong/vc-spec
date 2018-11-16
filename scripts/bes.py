@@ -134,7 +134,7 @@ class BES(object):
 		Unk38		= 0x0038
 		UserInfo	= 0x0070
 		Material	= 0x1000
-		Bitmap		= 0x1001
+		Standard	= 0x1001
 		PteroMat	= 0x1002
 
 	class BlockPresence:
@@ -143,7 +143,7 @@ class BES(object):
 		ReqSingle   = 2  # <1;1>
 		ReqMultiple = 3  # <1;N>
 
-	class Bitmap:
+	class Standard:
 		maps = ["Diffuse Color", "Displacement", "Bump", "Ambient Color",
 			"Specular Color", "Specular Level", "Glossiness", "Self-Illumination",
 			"UNKNOWN", "Filter Color", "Reflection", "Refraction"]
@@ -247,8 +247,8 @@ class BES(object):
 			return self.parse_block_user_info(subblock, index)
 		elif label == BES.BlockID.Material:
 			return self.parse_block_material(subblock, index)
-		elif label == BES.BlockID.Bitmap:
-			return self.parse_block_bitmap(subblock, index)
+		elif label == BES.BlockID.Standard:
+			return self.parse_block_standard(subblock, index)
 		elif label == BES.BlockID.PteroMat:
 			return self.parse_block_ptero_mat(subblock, index)
 		else:
@@ -501,29 +501,29 @@ class BES(object):
 		logging.log(logging.VERBOSE, "{}Material ({} B) - Number of materials: {:08x}".format(
 			" "*(index*2), len(data), children))
 
-		res = self.parse_blocks({BES.BlockID.Bitmap  : BES.BlockPresence.OptMultiple,
-					BES.BlockID.PteroMat : BES.BlockPresence.OptMultiple},
+		res = self.parse_blocks({BES.BlockID.Standard : BES.BlockPresence.OptMultiple,
+					BES.BlockID.PteroMat  : BES.BlockPresence.OptMultiple},
 					data[4:], index + 1)
 
-		if len(res[BES.BlockID.Bitmap]) + len(res[BES.BlockID.PteroMat]) != children:
+		if len(res[BES.BlockID.Standard]) + len(res[BES.BlockID.PteroMat]) != children:
 			logging.error("{}Number of material children does not match".format(
 				" "*(index*2)))
 
-	def parse_block_bitmap(self, data, index):
+	def parse_block_standard(self, data, index):
 		(unk1, unk2, bType) = BES.unpack("<I4sI", data)
-		sPrint = "{}Bitmap ({} B) - unk1: {}, unk2: {}".format(
+		sPrint = "{}Standard ({} B) - unk1: {}, unk2: {}".format(
 			" "*(index*2), len(data), unk1, unk2)
 		ptr = 12
 		for mapID in range(32):
 			if bType & (1 << mapID):
-				if mapID < len(BES.Bitmap.maps):
-					if BES.Bitmap.maps[mapID] == "UNKNOWN":
+				if mapID < len(BES.Standard.maps):
+					if BES.Standard.maps[mapID] == "UNKNOWN":
 						logging.warning("Undocumented bitmap detected")
 
 					(name_size, coord) = BES.unpack("<II", data[ptr:])
 					(name,) = BES.unpack("<" + str(name_size) + "s", data[ptr+8:])
 					sPrint += "\n{}{} map: ({}): {}".format(
-						" "*((index+1)*2), BES.Bitmap.maps[mapID],
+						" "*((index+1)*2), BES.Standard.maps[mapID],
 						name_size, pchar_to_string(name))
 					if coord & 0x5:
 						if coord & 0x5 == 0x1:

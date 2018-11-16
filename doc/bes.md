@@ -79,7 +79,7 @@ Here is quick reference table of known data sub-blocks:
 | User Info      | 0x0070 |
 | ...            | ...    |
 | Material       | 0x1000 |
-| Bitmap         | 0x1001 |
+| Standard       | 0x1001 |
 | PteroMat       | 0x1002 |
 
 ### Object
@@ -162,8 +162,8 @@ Should be 24 + 8 * number\_of\_textures (see below).
 BES supports following flags only (all of these flags must be set):
  * D3DFVF\_XYZ (0x002)
  * D3DFVF\_NORMAL (0x010)
- * D3DFVF\_TEXn (0x000 - 0x800) - number of textures used by material (see 'Type' field of Bitmap or PteroMat).
-Note that some materials (Bitmap for example) may contain more textures than PteroEngine/D3D allows (D3DFVF\_TEX8) - that case should be avoided.
+ * D3DFVF\_TEXn (0x000 - 0x800) - number of textures used by material (see 'Type' field of Standard or PteroMat).
+Note that some materials (Standard for example) may contain more textures than PteroEngine/D3D allows (D3DFVF\_TEX8) - that case should be avoided.
 
 Vertices data structures follows.
 This structure is based on *D3DVERTEX*, with difference in uv coords (see below) :
@@ -311,10 +311,10 @@ This matrix is in some files computed wrong and thus contains significant error.
 3. Number of materials inside of this block
 
 Other data sub-blocks may follow. Known sub-blocks:
-* Bitmap (any)
+* Standard (any)
 * PteroMat (any)
 
-### Bitmap
+### Standard
 
 | Offset | Name        | Type     |
 |--------|-------------|----------|
@@ -329,7 +329,7 @@ Other data sub-blocks may follow. Known sub-blocks:
 3. Unknown
 4. Unknown
 5. Map type bitfield.
-Here is a sorted list of maps contained in this bitmap:
+Here is a sorted list of maps contained in this material:
   * 0 - Diffuse Color
   * 1 - Displacement
   * 2 - Bump
@@ -343,7 +343,7 @@ Here is a sorted list of maps contained in this bitmap:
   * 10 - Reflection
   * 11 - Refraction
 
-Set bit in field 'Type' indicates that bitmap contains appropriate map.
+Set bit in field 'Type' indicates that material contains appropriate map.
 All maps have the same structure:
 
 | Offset | Name        | Type     |

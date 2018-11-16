@@ -163,6 +163,7 @@ BES supports following flags only (all of these flags must be set):
  * D3DFVF\_XYZ (0x002)
  * D3DFVF\_NORMAL (0x010)
  * D3DFVF\_TEXn (0x000 - 0x800) - number of textures used by material (see 'Type' field of Bitmap or PteroMat).
+Note that some materials (Bitmap for example) may contain more textures than PteroEngine/D3D allows (D3DFVF\_TEX8) - that case should be avoided.
 
 Vertices data structures follows.
 This structure is based on *D3DVERTEX*, with difference in uv coords (see below) :

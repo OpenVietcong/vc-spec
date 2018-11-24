@@ -134,7 +134,7 @@ Other data sub-blocks may follow. Known sub-blocks:
 
 1. Label of this sub-block - always 0x0031
 2. Size of this sub-block (including this field and label)
-3. Material ID (popints to the one of children of 'Material' data block) used by this mesh.
+3. Material ID (points to the one of children of 'Material' data block) used by this mesh.
 Value 0xFFFFFFFF if no material is used.
 
 Other data sub-blocks may follow. Known sub-blocks:
@@ -347,7 +347,7 @@ There is also unused flag 0x100, which may (or may not) be associated with 'Opac
   * 11 - Displacement      (0x002)
 
 Set bit in field 'Type' indicates that material contains appropriate map.
-All maps have the same structure:
+Maps structures in this ('Standard') block are ordered by flag value and all have the same structure:
 
 | Offset | Name        | Type     |
 |--------|-------------|----------|
@@ -381,15 +381,19 @@ Tile and mirror can not be used at the same time.
 1. Label of this sub-block - always 0x1002
 2. Size of this sub-block (including this field and label)
 3. Number of material sides: 0 = 1 sided, 1 = 2-sided. Other values are invalid.
-4. Texture type bitfield. Here is a sorted list of textures contained in this material:
-  * 16 - Diffuse #1 - Ground
-  * 17 - Diffuse #2 - Multitexture
-  * 18 - Diffuse #3 - Overlay
-  * 19 - Environment #1
-  * 20 - LightMap
-  * 21 - Unknown
-  * 22 - Environment #2
-  * 23 - LightMap (Engine Lights)
+4. Texture type bitfield.
+Here is a list of textures contained in this material.
+Like for 'Standard' materials, UV maps in 'Vertices' block are not ordered by flags values.
+On top of that, some maps are in pairs where only one map from pair can be present (here are maps separated by slash).
+The maps here are ordered according to order in 'Vertices' block (some maps are alone, some in pairs) and the flag value is written in brackets.
+Other similarity to 'Standard' material is that the 3DS Max allows to create the 'Environment #2' map, but it is again never exported.
+Also there is unused flag 0x200000, which may (or may not) be associated with 'Environment #2':
+  * 1 - Diffuse #1 - Ground                       (0x010000)
+  * 2 - Diffuse #3 - Overlay/Overlay Multitexture (0x040000/0x800000)
+  * 3 - Diffuse #2 - Multitexture                 (0x020000)
+  * 4 - Environment #1                            (0x100000)
+  * 5 - LightMap/LightMap (Engine Lights)         (0x080000/0x400000)
+
 5. Collision Material (only first 2 bytes are valid, the rest are zeros)
 6. Transparency type. Description can be found at
 [vietcong.info](http://www.vietcong.info/portal/forum/viewthread.php?thread_id=344&pid=4749#post_4749):
@@ -407,6 +411,7 @@ Tile and mirror can not be used at the same time.
 9. Material name
 
 Set bit in field 'Type' indicates that PteroMat contains appropriate texture.
+Unlike Standard material, every map here contains type, so they do not have to be (and usually are not) ordered by flag value.
 All textures have the same structure:
 
 | Offset | Name        | Type     |
@@ -416,7 +421,7 @@ All textures have the same structure:
 | 8      | Name        | CHAR[]   |
 
 1. Coordinates configuration bitfield.
-Upper 2 bytes should be equal to PteroMat's 'Type' field (but it is not always true - probably due some bug in 3DS Max).
+Upper 2 bytes are the current map type (same as flag from 'Type' of PteroMat).
 Meaning of lower 2 bytes follows (all bits except those listed here are always zero):
   * 0 - U tile
   * 1 - V tile

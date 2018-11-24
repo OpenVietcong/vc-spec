@@ -150,8 +150,8 @@ class BES(object):
 
 	class PteroMat:
 		texs = ["Diffuse #1 - Ground", "Diffuse #2 - Multitexture", "Diffuse #3 - Overlay",
-			"Environment #1", "LightMap", "UNKNOWN",
-			"Environment #2", "LightMap (Engine Lights)"]
+			"LightMap", "Environment #1", "UNKNOWN",
+			"LightMap (Engine Lights)", "Diffuse #3 - Overlay Multitexture"]
 		offset = 16
 		transparency = { 0x202D : "- none - (opaque)",
 				 0x3023 : "#0 - transparent, zbufwrite, sort",
@@ -167,15 +167,17 @@ class BES(object):
 			if BES.PteroMat.texs[texID - BES.PteroMat.offset] == "UNKNOWN":
 				logging.warning("Undocumented bitmap detected")
 
-			if (coord >> BES.PteroMat.offset) != (1 << (texID - BES.PteroMat.offset)):
-				logging.error("Texture type do not match ({:08x} vs {:08x})".format(
-				coord, 1 << texID))
-
 			if coord & 0xFFFC:
 				logging.warning("Unknown bits in texture ({:08x})".format(coord))
 
+			#Determine the texture type by flag in coord field
+			texFlag = coord >> 16
+			texPos = 0
+			while texFlag >> 1:
+				texFlag = texFlag >> 1
+				texPos += 1
 			sPrint = "\n{}{} texture - ({}): {}".format(
-				" "*((index+1)*2), BES.PteroMat.texs[texID - BES.PteroMat.offset],
+				" "*((index+1)*2), BES.PteroMat.texs[texPos],
 				name_size, pchar_to_string(name))
 
 			if coord & 0x1:
@@ -571,6 +573,7 @@ class BES(object):
 			sPrint += ", transparency '{}'".format(BES.PteroMat.transparency[transType])
 
 		ptr = 24 + name_size
+		# TODO check for multiple texture instances of same type
 		for texID in range(32):
 			if pType & (1 << texID):
 				if (texID >= BES.PteroMat.offset) and \

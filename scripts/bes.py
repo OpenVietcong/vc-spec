@@ -93,6 +93,12 @@ def trans_mat(t, r, s):
 
 	return m
 
+class BESMesh(object):
+	def __init__(self, vertices, faces, material):
+		self.vertices = vertices
+		self.faces = faces
+		self.material = material
+
 class BESVertex(object):
 	class Flags:
 		XYZ	= 0x002
@@ -331,13 +337,24 @@ class BES(object):
 				" "*(index*2)))
 
 	def parse_block_mesh(self, data, index):
+		""" Parse Mesh block and return BESMesh instance """
 		(material,) = BES.unpack("<I", data)
 		logging.log(logging.VERBOSE, "{}Mesh ({} B) - Material: {:08x}".format(
 			" "*(index*2), len(data), material))
 
-		self.parse_blocks({BES.BlockID.Vertices : BES.BlockPresence.ReqSingle,
-				BES.BlockID.Faces       : BES.BlockPresence.ReqSingle},
-				data[4:], index + 1)
+		res = self.parse_blocks({BES.BlockID.Vertices : BES.BlockPresence.ReqSingle,
+					BES.BlockID.Faces       : BES.BlockPresence.ReqSingle},
+					data[4:], index + 1)
+
+		vertices = res[BES.BlockID.Vertices]
+		faces    = res[BES.BlockID.Faces]
+
+		maxVertexID = max(max(faces, key=lambda item:item[1]))
+		if maxVertexID >= len(vertices):
+			logging.error("{}Vertex ID ({}) bigger than total number of vertices ({})".format(
+				" "*(index*2), maxVertexID, len(vertices)))
+
+		return BESMesh(vertices, faces, material)
 
 	def parse_block_vertices(self, data, index):
 		"""

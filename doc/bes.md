@@ -76,7 +76,7 @@ Here is quick reference table of known data sub-blocks:
 | ...            | ...    |
 | Unknown 0x038  | 0x0038 |
 | ...            | ...    |
-| User Info      | 0x0070 |
+| Info           | 0x0070 |
 | ...            | ...    |
 | Material       | 0x1000 |
 | Standard       | 0x1001 |
@@ -278,24 +278,24 @@ This matrix is in some files computed wrong and thus contains significant error.
 2. Size of this sub-block (including this field and label)
 3. Unknown
 
-### User info
+### Info
 
 | Offset | Name           | Type     |
 |--------|----------------|----------|
 | 0      | Label          | UINT32LE |
 | 4      | Blok size      | UINT32LE |
-| 8      | Name length    | UINT32LE |
+| 8      | Author length  | UINT32LE |
 | 12     | Comment length | UINT32LE |
-| 16     | Unknown        | UINT32LE |
+| 16     | Faces          | UINT32LE |
 | 20     | Name           | CHAR[64] |
 | 84     | Comment        | CHAR[]   |
 
 1. Label of this sub-block - always 0x0070
 2. Size of this sub-block (including this field and label)
-3. Length of 'Name' string. Should not exceed 64 bytes.
+3. Length of 'Author' string. Should not exceed 64 bytes.
 4. Length of 'Comment' string.
-5. Unknown
-6. Name (max 64 - remaining bytes are filled by zero)
+5. Faces (total in current BES)
+6. Author (max 64 - remaining bytes are filled by zero)
 7. Comment
 
 ### Material

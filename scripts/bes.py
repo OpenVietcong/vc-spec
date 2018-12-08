@@ -138,7 +138,7 @@ class BES(object):
 		Transformation	= 0x0035
 		Unk36		= 0x0036
 		Unk38		= 0x0038
-		UserInfo	= 0x0070
+		Info		= 0x0070
 		Material	= 0x1000
 		Standard	= 0x1001
 		PteroMat	= 0x1002
@@ -226,7 +226,7 @@ class BES(object):
 
 	def parse_data(self):
 		res = self.parse_blocks({BES.BlockID.Object  : BES.BlockPresence.ReqSingle,
-					BES.BlockID.UserInfo : BES.BlockPresence.ReqSingle},
+					BES.BlockID.Info : BES.BlockPresence.ReqSingle},
 					self.data[0x3010:], 0)
 
 	def parse_block_desc(self, data):
@@ -251,8 +251,8 @@ class BES(object):
 			return self.parse_block_unk36(subblock, index)
 		elif label == BES.BlockID.Unk38:
 			return self.parse_block_unk38(subblock, index)
-		elif label == BES.BlockID.UserInfo:
-			return self.parse_block_user_info(subblock, index)
+		elif label == BES.BlockID.Info:
+			return self.parse_block_info(subblock, index)
 		elif label == BES.BlockID.Material:
 			return self.parse_block_material(subblock, index)
 		elif label == BES.BlockID.Standard:
@@ -499,21 +499,30 @@ class BES(object):
 		logging.log(logging.VERBOSE, "{}Unk38 ({} B)".format(
 			" "*(index*2), len(data)))
 
-	def parse_block_user_info(self, data, index):
-		(name_size, comment_size, unknown) = BES.unpack("<III", data)
-		(name,) = BES.unpack("<" + str(name_size) + "s", data[12:])
-		(comment,) = BES.unpack("<" + str(comment_size) + "s", data[76:])
-		logging.log(logging.VERBOSE,
-			"{}User info ({} B) - name({}): {}, comment({}): {}, unknown: {:08x}".format(
-				" "*(index*2), len(data), name_size, pchar_to_string(name),
-				comment_size, pchar_to_string(comment), unknown))
+	def parse_block_info(self, data, index):
+		"""
+		Parse Info block and return tuple of:
+		author name, comment and number of faces in this BES file
+		"""
+		(author_size, comment_size, faces) = BES.unpack("<III", data)
 
-		if name_size > 64:
-			logging.error("{}Invalid name length ({})".format(
+		if author_size > 64:
+			logging.error("{}Invalid author length ({})".format(
 				" "*(index*2), name_size))
+			return ("", "", faces)
 		if len(data) != 76 + comment_size:
 			logging.error("{}Block size do not match: {} vs {}".format(
 				" "*(index*2), len(data), 76 + comment_size))
+			return ("", "", faces)
+
+		author = pchar_to_string(BES.unpack("<" + str(author_size) + "s", data[12:])[0])
+		comment = pchar_to_string(BES.unpack("<" + str(comment_size) + "s", data[76:])[0])
+		logging.log(logging.VERBOSE,
+			"{}Info ({} B) - author({}): {}, comment({}): {}, faces: {}".format(
+				" "*(index*2), len(data), author_size, author,
+				comment_size, comment, faces))
+
+		return (author, comment, faces)
 
 	def parse_block_material(self, data, index):
 		(children,) = BES.unpack("<I", data)

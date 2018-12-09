@@ -37,7 +37,10 @@ Known tools:
 * [MANM](https://github.com/OpenVietcong/vc-spec/blob/master/doc/manm.md)
  (ModelAnimation) - describes animation of certain model from BES file.
 Documented around 40%.
-* SCO (SceneObject)
+* [SCO](https://github.com/OpenVietcong/vc-spec/blob/master/doc/sco.md)
+ (SceneObject) - level scene.
+Contains position of game objects, like models, waypoints etc.
+Documented around 1%.
 Known tools:
   * [Vietcong Editor](http://www.vietcong.info/portal/downloads.php?cat\_id=2)
   * [Vietcong dev editor](http://www.vietcong.info/portal/downloads.php?cat\_id=2)

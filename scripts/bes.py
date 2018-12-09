@@ -127,6 +127,12 @@ class BES(object):
 	class Header:
 		sig = b'BES\x00'
 		vers = [b'0100']
+		lib_vers = {
+			0x00000000 : "AutoSelect",
+			0x17700d00 : "3DS Max 6",
+			0x1b580f00 : "3DS Max 7",
+			0x1f401100 : "3DS Max 8"
+		}
 
 	class BlockID:
 		Object		= 0x0001
@@ -206,17 +212,25 @@ class BES(object):
 		return st_unpack(data[:st_len])
 
 	def parse_header(self):
-		(sig, ver, unk1, unk2) = BES.unpack("<4s4sII", self.data)
+		(sig, bes_ver, lib_ver, unk2) = BES.unpack("<4s4sII", self.data)
 
 		if sig != BES.Header.sig:
 			raise RuntimeError("  Invalid header signature")
 
-		if ver not in BES.Header.vers:
-			logging.error("  Unsupported BES version: {}".format(ver))
-			ver = None
+		if bes_ver not in BES.Header.vers:
+			logging.error("  Unsupported BES version: {}".format(bes_ver))
+			bes_ver = None
+		else:
+			logging.log(logging.VERBOSE, "BES version: {}".format(bes_ver))
 
-		self.ver = ver
-		return ver
+		if lib_ver not in BES.Header.lib_vers:
+			logging.warning("  Unknown exporter version: {:08x}".format(lib_ver))
+		else:
+			logging.log(logging.VERBOSE, "Exporter version: {}".format(
+				BES.Header.lib_vers[lib_ver]))
+
+		self.ver = bes_ver
+		return bes_ver
 
 	def parse_preview(self):
 		if len(self.data) < 0x3010:

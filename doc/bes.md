@@ -24,7 +24,7 @@ Total size: 16
 |--------|-----------|----------|
 | 0      | Signature | CHAR[4]  |
 | 4      | Version   | CHAR[4]  |
-| 8      | Unknown   | UINT32LE |
+| 8      | Exporter  | UINT32LE |
 | 12     | Unknown   | UINT32LE |
 
 1. Signature identifying the BES file. Contains fixed string 'BES' with NULL character at the end (0x42 0x45 0x53 0x00).
@@ -35,7 +35,11 @@ Total size: 16
   - 0007 (0x30 0x30 0x30 0x37)
   - 0008 (0x30 0x30 0x30 0x38)
   - 0100 (0x30 0x31 0x30 0x30)
-3. Unknown
+3. Type/version of application which created this BES file. Known values (MaxSDKVersion):
+  - AutoSelect (0x00000000)
+  - 3DS Max 6  (0x17700d00)
+  - 3DS Max 7  (0x1b580f00)
+  - 3DS Max 8  (0x1f401100)
 4. Unknown
 
 Preview

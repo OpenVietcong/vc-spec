@@ -1,4 +1,3 @@
-
 This document describes WAY (vehicle waypoints) files.
 
 File structure

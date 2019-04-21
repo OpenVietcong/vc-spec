@@ -14,7 +14,7 @@ Total size: 8
 | Offset | Name | Type |
 |---|---|---|
 | 0 | Signature | CHAR[4] |
-| 4 | Unknown | UINT32 |
+| 4 | Unknown | UINT32LE |
 
 1. Identify the CTR file, contains fixed string 'SRTC' (0x53 0x52 0x54 0x43)
 2. Unknown - always 0x0C
@@ -27,7 +27,7 @@ Every control is always defined by two keys (primary and secondary), except from
 
 | Offset	| Name	| Type |
 |---|---|---|
-| 0	| Count	| UINT32 |
+| 0	| Count	| UINT32LE |
 | 4	| Control	| Sub-blocks |
 | ...	| Null	| NULL |
 
@@ -43,7 +43,7 @@ Total size: 24
 
 | Offset | Name | Type |
 |---|---|---|
-| 0 | Index | UINT32 |
+| 0 | Index | UINT32LE |
 | 4 | Primary key | Sub-block |
 | 12 | Secondary key | Sub-block |
 | 20 | Null | NULL[4] |
@@ -289,9 +289,9 @@ Total size: variable
 | Offset |	Name |	Type |
 |---|---|---|
 | 0 |	Label |	CHAR[4] |
-| 4 |	Unknown |	UINT32 |
-| 8 |	Unknown |	UINT32 |
-| 12 |	Item count |	UINT32 |
+| 4 |	Unknown |	UINT32LE |
+| 8 |	Unknown |	UINT32LE |
+| 12 |	Item count |	UINT32LE |
 
 1. Label of this sub-block - always 0x63666878 'cfhx'
 2. Unknown - always 0x10
@@ -303,16 +303,16 @@ Total size: variable
 
 | Offset |	Name |	Type |
 |---|---|---|
-| 16 |	1. Position |	UINT32 |
-| 20 |	2. Position |	UINT32 |
-| 24 |	3. Position |	UINT32 |
-| 28 |	4. Position |	UINT32 |
-| 32 |	5. Position |	UINT32 |
-| 36 |	6. Position |	UINT32 |
-| 40 |	7. Position |	UINT32 |
-| 44 |	8. Position |	UINT32 |
-| 48 |	9. Position |	UINT32 |
-| 52 |	10. Position |	UINT32 |
+| 16 |	1st Position |	UINT32LE |
+| 20 |	2nd Position |	UINT32LE |
+| 24 |	3rd Position |	UINT32LE |
+| 28 |	4th Position |	UINT32LE |
+| 32 |	5th Position |	UINT32LE |
+| 36 |	6th Position |	UINT32LE |
+| 40 |	7th Position |	UINT32LE |
+| 44 |	8th Position |	UINT32LE |
+| 48 |	9th Position |	UINT32LE |
+| 52 |	10th Position |	UINT32LE |
 
 1-10. Specifies which item is in its position
 

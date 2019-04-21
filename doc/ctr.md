@@ -59,12 +59,12 @@ Exceptions
 
 Inside some control blocks are stored other setting elements.
 
-| Index	| Offset |	Size |	Name | Type |
-|---|---|---|---|---|
-| 0x28 |	20 |	1 |	Reverse mouse |	UINT32 |
-| 0x29 |	20 |	1 |	Mouse look |	UINT32 |
-| 0x2A |	20 |	4 |	Mouse sensitivity |	FLOAT32LE |
-| 0x2B |	20 |	4 |	Keyboard turn speed |	FLOAT32LE |
+| Index	| Offset |	Name | Type |
+|---|---|---|---|
+| 0x28 |	20 |	Reverse mouse |	UINT32LE |
+| 0x29 |	20 |	Mouse look |	UINT32LE |
+| 0x2A |	20 |	Mouse sensitivity |	FLOAT32LE |
+| 0x2B |	20 |	Keyboard turn speed |	FLOAT32LE |
 
 1-2. Boolean value (0 - unchecked, 1 - checked)  
 3-4. Value between 0 - 1

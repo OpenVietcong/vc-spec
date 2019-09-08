@@ -52,25 +52,27 @@ Total size: Descriptor size
 | Offset | Name            | Type        |
 |--------|-----------------|-------------|
 | 0      | File offset     | UINT32LE    |
-| 4      | Unknown1        | UINT32LE[4] |
+| 4      | Reserved        | UINT32LE    |
+| 8      | Unknown1        | UINT32LE[3] |
 | 20     | File size       | UINT32LE    |
-| 24     | Unknown2        | UINT32LE    |
+| 24     | Reserved        | UINT32LE    |
 | 28     | Compressed size | UINT32LE    |
 | 32     | Encoding        | UINT32LE    |
-| 36     | Unknown3        | UINR32LE    |
+| 36     | Unknown2        | UINR32LE    |
 | 40     | File name       | CHAR[]      |
 
 1. Offset of stored file in CBF archive.
-2. Unknown
-3. File size after extraction
-4. Unknown
-5. File size in the CBF archive in case of compression as a storage method.
+2. Reserved (always zeros).
+3. Unknown
+4. File size after extraction
+5. Reserved (always zeros).
+6. File size in the CBF archive in case of compression as a storage method.
 Otherwise zero.
-6. Encoding method - describes how is file stored in CBF archive:
+7. Encoding method - describes how is file stored in CBF archive:
   - 0x0 file is encrypted.
   - 0x1 file is compressed.
-7. Unknown.
-8. File name with NULL character.
+8. Unknown.
+9. File name with NULL character.
 Length of the string can be calculated as "Descriptor size - 40".
 Uses windows-1250 encoding.
 

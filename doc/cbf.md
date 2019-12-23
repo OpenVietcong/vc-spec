@@ -3,7 +3,7 @@ This document describes CBF files.
 Header
 ======
 
-Total size: 32
+Total size: 52 (without extensions)
 
 | Offset | Name         | Type          |
 |--------|--------------|---------------|
@@ -14,6 +14,16 @@ Total size: 32
 | 20     | Table offset | UINT32LE      |
 | 24     | Reserved     | UINT32LE      |
 | 28     | Table size   | UINT32LE      |
+| 32     | Reserved     | UINT32LE      |
+| 36     | Header size  | UINT32LE      |
+| 40     | Reserved     | UINT32LE      |
+| 44     | Unknown1     | UINT32LE[2]   |
+|      | (for header size >= 64) |      |
+| 52     | Reserved     | UINT32LE[3]   |
+|      | (for header size >= 70) |      |
+| 64     | Label        | UINT16LE      |
+| 66     | Comment size | UINT32LE      |
+| 70     | Comment      | CHAR[]        |
 
 1. Signature identifying the CBF file.
 Contains fixed string "BIGF"\1"ZBL" without NULL character at the end (0x42 0x49 0x47 0x46 0x01x 0x5A 0x42 0x4C).
@@ -23,6 +33,17 @@ Contains fixed string "BIGF"\1"ZBL" without NULL character at the end (0x42 0x49
 5. Offset of Table of Files in CBF archive.
 6. Reserved (always zeros).
 7. Size of Table of Files.
+8. Reserved (always zeros).
+9. Extension header size. 0 Means no extra data available (header size = 52), otherwise it means header size.
+ * 70 (and bigger): usually CBF files.
+ * 64: usually DAT files.
+ * 0: others (usually official Pterodon CBF/DAT files).
+10. Reserved (always zeros).
+11. Unknown1
+12. Reserved (always zeros) - available for header size >= 64 only.
+13. Label of this sub block - always 0x1 - this and following available for header size >= 70 only.
+14. Length of Comment (with terminating NULL character).
+15. Comment (HB for hradba folder, maps for maps folder, POKUS for setup.cbf).
 
 Table of Files
 ==============
@@ -58,7 +79,7 @@ Total size: Descriptor size
 | 24     | Reserved        | UINT32LE    |
 | 28     | Compressed size | UINT32LE    |
 | 32     | Encoding        | UINT32LE    |
-| 36     | Unknown2        | UINR32LE    |
+| 36     | Unknown2        | UINT32LE    |
 | 40     | File name       | CHAR[]      |
 
 1. Offset of stored file in CBF archive.

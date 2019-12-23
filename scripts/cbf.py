@@ -191,7 +191,7 @@ class CBFFile(object):
 
 class CBFArchive(object):
     class Header:
-        size = 0x20
+        size = 0x34
         sig = b'BIGF\x01ZBL'
 
     class Table:
@@ -219,7 +219,7 @@ class CBFArchive(object):
         if len(self.fileData) < CBFArchive.Header.size:
             raise RuntimeError("  Invalid header size")
 
-        (sig, CBFSize, unk1, fileCnt, tableOffset, unk2, tableSize) = unpack("<8sIIIIII", self.fileData)
+        (sig, CBFSize, res1, fileCnt, tableOffset, res2, tableSize, res3, headerSize, res4) = unpack("<8sIIIIIIIII", self.fileData)
 
         if sig != CBFArchive.Header.sig:
             raise RuntimeError("  Invalid header signature")
@@ -231,8 +231,27 @@ class CBFArchive(object):
 
         if len(self.fileData) != CBFSize:
             logging.error("  Invalid CBF size")
-        if unk1 != 0 or unk2 != 0:
-            logging.warning("  Unexpected data in header")
+        if res1 != 0 or res2 != 0 or res3 != 0 or res4 != 0:
+            logging.warning("  Non-zero reserved data in header")
+
+        if headerSize != 0:
+            if len(self.fileData) < headerSize:
+                raise RuntimeError("  Invalid header size with extensions")
+
+            if headerSize >= 64:
+                res5 = unpack("<III", self.fileData[52:])
+                if res5[0] != 0 or res5[1] != 0 or res5[2] != 0:
+                    logging.warning("  Non-zero reserved data in externsion header")
+
+                if headerSize >= 70:
+                    (label, commentSize) = unpack("<HI", self.fileData[64:])
+                    (comment,) = unpack("<" + str(commentSize) + "s", self.fileData[70:])
+                    comment = str(comment, 'windows-1250')
+                    logging.debug("Comment: " + comment)
+                elif headerSize > 64:
+                    logging.warning("  Invalid extension header size")
+            else:
+                logging.warning("  Invalid extension header size")
 
         return (fileCnt, self.fileData[tableOffset:tableOffset + tableSize])
 

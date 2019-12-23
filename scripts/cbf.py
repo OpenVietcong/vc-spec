@@ -219,7 +219,8 @@ class CBFArchive(object):
         if len(self.fileData) < CBFArchive.Header.size:
             raise RuntimeError("  Invalid header size")
 
-        (sig, CBFSize, res1, fileCnt, tableOffset, res2, tableSize, res3, headerSize, res4) = unpack("<8sIIIIIIIII", self.fileData)
+        (sig, CBFSize, res1, fileCnt, tableOffset, res2, tableSize, res3) = unpack("<8sIIIIIII", self.fileData)
+        (headerSize, res4, lowDateTime, highDateTime) = unpack("<IIII", self.fileData[36:])
 
         if sig != CBFArchive.Header.sig:
             raise RuntimeError("  Invalid header signature")
@@ -278,8 +279,11 @@ class CBFArchive(object):
             itemData = self.decrypt(fileTable[pos:pos+itemSize])
             pos += itemSize
 
-            (fileOffset, unk1, unk2, unk3, unk4) = unpack("<I4I", itemData)
-            (fileSize, unk5, fileCompressedSize, fileStorageType, unk7) = unpack("<IIIII", itemData[20:])
+            (fileOffset, res1, unk1, lowDateTime, highDateTime) = unpack("<I4I", itemData)
+            (fileSize, res2, fileCompressedSize, fileStorageType, unk2) = unpack("<IIIII", itemData[20:])
+
+            if res1 != 0 or res2 != 0:
+                logging.warning("  Non-zero reserved data in file desc")
 
             (fileName, ) = unpack("<" + str(itemSize - CBFArchive.Table.itemSize) + "s", itemData[CBFArchive.Table.itemSize:])
             if fileName[-1] != 0x0:

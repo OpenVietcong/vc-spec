@@ -17,7 +17,7 @@ Total size: 52 (without extensions)
 | 32     | Reserved     | UINT32LE      |
 | 36     | Header size  | UINT32LE      |
 | 40     | Reserved     | UINT32LE      |
-| 44     | Unknown1     | UINT32LE[2]   |
+| 44     | DateTime     | UINT32LE[2]   |
 |      | (for header size >= 64) |      |
 | 52     | Reserved     | UINT32LE[3]   |
 |      | (for header size >= 70) |      |
@@ -39,7 +39,9 @@ Contains fixed string "BIGF"\1"ZBL" without NULL character at the end (0x42 0x49
  * 64: usually DAT files.
  * 0: others (usually official Pterodon CBF/DAT files).
 10. Reserved (always zeros).
-11. Unknown1
+11. Unknown if Header size = 0, otherwise time of CBF creation represented as *FILETIME* - see
+[windef.h](https://github.com/wine-mirror/wine/blob/master/include/windef.h)
+for more details.
 12. Reserved (always zeros) - available for header size >= 64 only.
 13. Label of this sub block - always 0x1 - this and following available for header size >= 70 only.
 14. Length of Comment (with terminating NULL character).
@@ -74,7 +76,8 @@ Total size: Descriptor size
 |--------|-----------------|-------------|
 | 0      | File offset     | UINT32LE    |
 | 4      | Reserved        | UINT32LE    |
-| 8      | Unknown1        | UINT32LE[3] |
+| 8      | Unknown1        | UINT32LE    |
+| 12     | DateTime        | UINT32LE[2] |
 | 20     | File size       | UINT32LE    |
 | 24     | Reserved        | UINT32LE    |
 | 28     | Compressed size | UINT32LE    |
@@ -85,15 +88,16 @@ Total size: Descriptor size
 1. Offset of stored file in CBF archive.
 2. Reserved (always zeros).
 3. Unknown
-4. File size after extraction
-5. Reserved (always zeros).
-6. File size in the CBF archive in case of compression as a storage method.
+4. Time of file creation represented as *FILETIME* structure.
+5. File size after extraction
+6. Reserved (always zeros).
+7. File size in the CBF archive in case of compression as a storage method.
 Otherwise zero.
-7. Encoding method - describes how is file stored in CBF archive:
+8. Encoding method - describes how is file stored in CBF archive:
   - 0x0 file is encrypted.
   - 0x1 file is compressed.
-8. Unknown.
-9. File name with NULL character.
+9. Unknown.
+10. File name with NULL character.
 Length of the string can be calculated as "Descriptor size - 40".
 Uses windows-1250 encoding.
 

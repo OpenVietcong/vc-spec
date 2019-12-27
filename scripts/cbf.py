@@ -194,10 +194,15 @@ class CBFArchive(object):
         size = 0x34
         sig = b'BIGF\x01ZBL'
 
+    class Mode:
+        classic = 0
+        extended = 1
+
     class Table:
         itemSize = 0x28
 
     def __init__(self, name, data):
+        self.fileMode = CBFArchive.Mode.classic
         self.fileName = name
         self.fileData = data
 
@@ -254,6 +259,8 @@ class CBFArchive(object):
             else:
                 logging.warning("  Invalid extension header size")
 
+        self.fileMode = CBFArchive.Mode.extended if headerSize > 0 else CBFArchive.Mode.classic
+
         return (fileCnt, self.fileData[tableOffset:tableOffset + tableSize])
 
     def parse_table(self, fileTable):
@@ -284,6 +291,10 @@ class CBFArchive(object):
 
             if res1 != 0 or res2 != 0:
                 logging.warning("  Non-zero reserved data in file desc")
+
+            if self.fileMode == CBFArchive.Mode.classic:
+                if unk1 != 0 or lowDateTime != 0 or highDateTime != 0:
+                    logging.warning("  Non-zero reserved data in classic file desc")
 
             (fileName, ) = unpack("<" + str(itemSize - CBFArchive.Table.itemSize) + "s", itemData[CBFArchive.Table.itemSize:])
             if fileName[-1] != 0x0:

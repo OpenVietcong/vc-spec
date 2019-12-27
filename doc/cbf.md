@@ -1,4 +1,7 @@
 This document describes CBF files.
+We distinguish between two versions/modes of CBF:
+lets call them *classic* and *extended*.
+They differ in meaning of few entries.
 
 Header
 ======
@@ -34,12 +37,13 @@ Contains fixed string "BIGF"\1"ZBL" without NULL character at the end (0x42 0x49
 6. Reserved (always zeros).
 7. Size of Table of Files.
 8. Reserved (always zeros).
-9. Extension header size. 0 Means no extra data available (header size = 52), otherwise it means header size.
- * 70 (and bigger): usually CBF files.
- * 64: usually DAT files.
- * 0: others (usually official Pterodon CBF/DAT files).
+9. Extension header size. Defines version of CBF file:
+ * 0: *classic* CBF (usually official Pterodon CBF/DAT files).)
+ * other: *extended* CBF and size of its header. 64 usually for DAT files, 70 and bigger usually CBF files.
 10. Reserved (always zeros).
-11. Unknown if Header size = 0, otherwise time of CBF creation represented as *FILETIME* - see
+11. Two meanings:
+ - *Classic* CBF: unknown.
+ - *Extended* CBF: time of CBF creation represented as *FILETIME* - see
 [windef.h](https://github.com/wine-mirror/wine/blob/master/include/windef.h)
 for more details.
 12. Reserved (always zeros) - available for header size >= 64 only.
@@ -87,8 +91,12 @@ Total size: Descriptor size
 
 1. Offset of stored file in CBF archive.
 2. Reserved (always zeros).
-3. Unknown
-4. Time of file creation represented as *FILETIME* structure.
+3. Two meanings:
+ - *Classic* CBF: reserved (always zeros).
+ - *Extended* CBF: unknown.
+4. Two meanings:
+ - *Classic* CBF: reserved (always zeros).
+ - *Extended* CBF: time of file creation represented as *FILETIME* structure.
 5. File size after extraction
 6. Reserved (always zeros).
 7. File size in the CBF archive in case of compression as a storage method.

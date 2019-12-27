@@ -1,4 +1,4 @@
-This document describes CBF files.
+This document describes CBF (CompressedBigFile) files.
 We distinguish between two versions/modes of CBF:
 lets call them *classic* and *extended*.
 They differ in meaning of few entries.
@@ -30,6 +30,9 @@ Total size: 52 (without extensions)
 
 1. Signature identifying the CBF file.
 Contains fixed string "BIGF"\1"ZBL" without NULL character at the end (0x42 0x49 0x47 0x46 0x01x 0x5A 0x42 0x4C).
+  - BIGF probably stands for *BigFile*
+  - ZBL probably stands for
+[ZblekaSoft](https://web.archive.org/web/20050321050830/http://www.zbl.cz/)
 2. Size of CBF archive (including this header).
 3. Reserved (always zeros).
 4. Number of files in CBF archive.

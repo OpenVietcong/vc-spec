@@ -29,17 +29,17 @@ Total size: 16
 
 1. Signature identifying the BES file. Contains fixed string 'BES' with NULL character at the end (0x42 0x45 0x53 0x00).
 2. Version of this BES file. VietCong knows following versions:
-  - 0004 (0x30 0x30 0x30 0x34)
-  - 0005 (0x30 0x30 0x30 0x35)
-  - 0006 (0x30 0x30 0x30 0x36)
-  - 0007 (0x30 0x30 0x30 0x37)
-  - 0008 (0x30 0x30 0x30 0x38)
-  - 0100 (0x30 0x31 0x30 0x30)
+  * 0004 (0x30 0x30 0x30 0x34)
+  * 0005 (0x30 0x30 0x30 0x35)
+  * 0006 (0x30 0x30 0x30 0x36)
+  * 0007 (0x30 0x30 0x30 0x37)
+  * 0008 (0x30 0x30 0x30 0x38)
+  * 0100 (0x30 0x31 0x30 0x30)
 3. Type/version of application which created this BES file. Known values (MaxSDKVersion):
-  - AutoSelect (0x00000000)
-  - 3DS Max 6  (0x17700d00)
-  - 3DS Max 7  (0x1b580f00)
-  - 3DS Max 8  (0x1f401100)
+  * AutoSelect (0x00000000)
+  * 3DS Max 6  (0x17700d00)
+  * 3DS Max 7  (0x1b580f00)
+  * 3DS Max 8  (0x1f401100)
 4. Unknown
 
 Preview
@@ -164,9 +164,9 @@ This block contains mesh vertices, which are heavily inspired by D3D8.
 Should be 24 + 8 * number\_of\_textures (see below).
 5. Vertex flags (*D3DFVF*).
 BES supports following flags only (all of these flags must be set):
- * D3DFVF\_XYZ (0x002)
- * D3DFVF\_NORMAL (0x010)
- * D3DFVF\_TEXn (0x000 - 0x800) - number of textures used by material (see 'Type' field of Standard or PteroMat).
+  * D3DFVF\_XYZ (0x002)
+  * D3DFVF\_NORMAL (0x010)
+  * D3DFVF\_TEXn (0x000 - 0x800) - number of textures used by material (see 'Type' field of Standard or PteroMat).
 Note that some materials (Standard for example) may contain more textures than PteroEngine/D3D allows (D3DFVF\_TEX8) - that case should be avoided.
 
 Vertices data structures follows.

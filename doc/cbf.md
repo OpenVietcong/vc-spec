@@ -30,8 +30,8 @@ Total size: 52 (without extensions)
 
 1. Signature identifying the CBF file.
 Contains fixed string "BIGF"\1"ZBL" without NULL character at the end (0x42 0x49 0x47 0x46 0x01x 0x5A 0x42 0x4C).
-  - BIGF probably stands for *BigFile*
-  - ZBL probably stands for
+  * BIGF probably stands for *BigFile*
+  * ZBL probably stands for
 [ZblekaSoft](https://web.archive.org/web/20050321050830/http://www.zbl.cz/)
 2. Size of CBF archive (including this header).
 3. Reserved (always zeros).
@@ -41,12 +41,12 @@ Contains fixed string "BIGF"\1"ZBL" without NULL character at the end (0x42 0x49
 7. Size of Table of Files.
 8. Reserved (always zeros).
 9. Extension header size. Defines version of CBF file:
- * 0: *classic* CBF (usually official Pterodon CBF/DAT files).)
- * other: *extended* CBF and size of its header. 64 usually for DAT files, 70 and bigger usually CBF files.
+  * 0: *classic* CBF (usually official Pterodon CBF/DAT files).
+  * other: *extended* CBF and size of its header. 64 usually for DAT files, 70 and bigger usually CBF files.
 10. Reserved (always zeros).
 11. Two meanings:
- - *Classic* CBF: unknown.
- - *Extended* CBF: time of CBF creation represented as *FILETIME* - see
+  * *Classic* CBF: unknown.
+  * *Extended* CBF: time of CBF creation represented as *FILETIME* - see
 [windef.h](https://github.com/wine-mirror/wine/blob/master/include/windef.h)
 for more details.
 12. Reserved (always zeros) - available for header size >= 64 only.
@@ -95,18 +95,18 @@ Total size: Descriptor size
 1. Offset of stored file in CBF archive.
 2. Reserved (always zeros).
 3. Two meanings:
- - *Classic* CBF: reserved (always zeros).
- - *Extended* CBF: unknown.
+  * *Classic* CBF: reserved (always zeros).
+  * *Extended* CBF: unknown.
 4. Two meanings:
- - *Classic* CBF: reserved (always zeros).
- - *Extended* CBF: time of file creation represented as *FILETIME* structure.
+  * *Classic* CBF: reserved (always zeros).
+  * *Extended* CBF: time of file creation represented as *FILETIME* structure.
 5. File size after extraction
 6. Reserved (always zeros).
 7. File size in the CBF archive in case of compression as a storage method.
 Otherwise zero.
 8. Encoding method - describes how is file stored in CBF archive:
-  - 0x0 file is encrypted.
-  - 0x1 file is compressed.
+  * 0x0 file is encrypted.
+  * 0x1 file is compressed.
 9. Unknown.
 10. File name with NULL character.
 Length of the string can be calculated as "Descriptor size - 40".

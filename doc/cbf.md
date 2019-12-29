@@ -116,7 +116,7 @@ Uses windows-1250 encoding.
 Encryption of file descriptor
 -----------------------------
 
-File descriptor is encrypted using simple symetric algorithm with *lut* (look-up table) and its *key*.
+File descriptors are encrypted using simple symetric algorithm with *lut* (look-up table) and its *key*.
 The *lut* has following values:
 ```
 lut[16] = {
@@ -143,6 +143,14 @@ Files stored in CBF archive can be either encrypted or compressed.
 
 Encrypted files
 ---------------
+
+Files are encrypted using simple algorithm with static *salt* (0xA6) and file length as a *key*.
+All values are 8b wide.
+
+Here is algorithm for decryption:
+```
+dec_val = (enc_val + salt + key) ^ key;
+```
 
 Compressed files
 ----------------

@@ -2,6 +2,7 @@ This document describes CBF (CompressedBigFile) files.
 We distinguish between two versions/modes of CBF:
 lets call them *classic* and *extended*.
 They differ in meaning of few entries.
+The CBF is pointer-based file format.
 
 Header
 ======
@@ -112,6 +113,29 @@ Otherwise zero.
 Length of the string can be calculated as "Descriptor size - 40".
 Uses windows-1250 encoding.
 
+Encryption of file descriptor
+-----------------------------
+
+File descriptor is encrypted using simple symetric algorithm with *lut* (look-up table) and its *key*.
+The *lut* has following values:
+```
+lut[16] = {
+	0x32, 0xF3, 0x1E, 0x06, 0x45, 0x70, 0x32, 0xAA,
+	0x55, 0x3F, 0xF1, 0xDE, 0xA3, 0x44, 0x21, 0xB4,
+};
+```
+
+Data are (en/de)crypted byte by byte as (de/en)crypted value XORed with value from *lut*.
+The *key* for *lut* is 8b wide and initialized with length of (de)coding data.
+Every next step is *key* set to encrypted value from previous step.
+Only lower 4b from *key* are used for indexing *lut*, since *key* is 8b and *lut*
+has size of 16 values (4b index).
+
+Here is algorithm for decryption:
+```
+dec_val = enc_val ^ lut[key & 0xF];
+key = enc_val;
+```
 Files
 =====
 

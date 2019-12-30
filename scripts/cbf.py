@@ -327,7 +327,7 @@ class CBFArchive(object):
                 fileDir = os.path.join(*file.dirname)
                 filePath = os.path.join(fileDir, file.basename)
 
-                if not os.path.exists(fileDir):
+                if fileDir and not os.path.exists(fileDir):
                     os.makedirs(fileDir)
 
             fileData = file.extractData()

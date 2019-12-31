@@ -18,6 +18,12 @@ Specification of CBF file format is partly based on
 [vietcong-unpacker](https://github.com/Romop5/vietcong-unpacker)
 project.
 
+# File formats with full specification
+* [CTR](https://github.com/OpenVietcong/vc-spec/blob/master/doc/ctr.md)
+  (Control) - control files.
+* [WAY](https://github.com/OpenVietcong/vc-spec/blob/master/doc/way.md)
+  (Waypoints) - vehicle waypoints.
+
 # Known file formats
 
 * [BES](https://github.com/OpenVietcong/vc-spec/blob/master/doc/bes.md)
@@ -29,7 +35,7 @@ Known tools:
   * [Blender plugin](https://github.com/sonicpp/vietcong-blender-plugins)
 * [CBF](https://github.com/OpenVietcong/vc-spec/blob/master/doc/cbf.md)
 (CompressedBigFile) - archive containing encrypted/compressed files.
-Documented around 95%.
+Documented around 95% for both *ZBL0* and *ZBL1* versions.
 Known tools:
   * [Total Commander plugin](http://www.vietcong-coop.net/site?node_id=6&action=show_data&p_id=510&ordercol=fileclass&ordertype=ASC&row=41)
 * EQP (Equipment)
@@ -59,7 +65,6 @@ Known tools:
 * STG
 * STO (skelet animation?)
 * TX3
-* WAY (waypoint?)
 * XDT
 * XST
 * XTL

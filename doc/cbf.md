@@ -1,17 +1,23 @@
-This document describes CBF (CompressedBigFile) files.
-We distinguish between two versions/modes of CBF:
+This document describes CBF (CompressedBigFile), the pointer-base file format.
+There are two known versions of CBF: *ZBL0* (ZblekaSoft) and *ZBL1*.
+*ZBL0* uses plain file tables and files itself (these may also be compressed,
+like in case of *ZBL1*), while *ZBL1* uses encryption for both file tables and files
+(although it uses different encryption algorithm for each).
+*ZBL1* also stores size of each file descriptor (which make reading of such file
+descriptor easier), while *ZBL0* does not.
+For the second version of CBF, we distinguish between two modes:
 lets call them *classic* and *extended*.
 They differ in meaning of few entries.
-The CBF is pointer-based file format.
 
 Header
 ======
 
-Total size: 52 (without extensions)
+Total size: 52 or bigger
 
 | Offset | Name         | Type          |
 |--------|--------------|---------------|
-| 0      | Signature    | CHAR[8]       |
+| 0      | Signature    | CHAR[4]       |
+| 4      | Version      | CHAR[4]       |
 | 8      | Archive size | UINT32LE      |
 | 12     | Reserved     | UINT32LE      |
 | 16     | File count   | UINT32LE      |
@@ -30,39 +36,41 @@ Total size: 52 (without extensions)
 | 70     | Comment      | CHAR[]        |
 
 1. Signature identifying the CBF file.
-Contains fixed string "BIGF"\1"ZBL" without NULL character at the end (0x42 0x49 0x47 0x46 0x01x 0x5A 0x42 0x4C).
-  * BIGF probably stands for *BigFile*
-  * ZBL probably stands for
-[ZblekaSoft](https://web.archive.org/web/20050321050830/http://www.zbl.cz/)
-2. Size of CBF archive (including this header).
-3. Reserved (always zeros).
-4. Number of files in CBF archive.
-5. Offset of Table of Files in CBF archive.
-6. Reserved (always zeros).
-7. Size of Table of Files.
-8. Reserved (always zeros).
-9. Extension header size. Defines version of CBF file:
-  * 0: *classic* CBF (usually official Pterodon CBF/DAT files).
+Contains fixed string "BIGF" (0x42 0x49 0x47 0x46) - probably stands for *BigFile*.
+2. CBF version. Currently known two versions:
+  * \0"ZBL" (0x00x 0x5A 0x42 0x4C). Probably stands for
+[ZblekaSoft](https://web.archive.org/web/20050321050830/http://www.zbl.cz/).
+  * \1"ZBL" (0x01x 0x5A 0x42 0x4C)
+3. Size of CBF archive (including this header).
+4. Reserved (always zeros).
+5. Number of files in CBF archive.
+6. Offset of Table of Files in CBF archive.
+7. Reserved (always zeros).
+8. Size of Table of Files.
+9. Reserved (always zeros).
+10. Header size. Always 64 for *ZBL0*, for *ZBL1* defines mode of CBF file:
+  * 0: *classic* CBF, which means no extensions - header size is 52 in total (usually official Pterodon CBF/DAT files).
   * other: *extended* CBF and size of its header. 64 usually for DAT files, 70 and bigger usually CBF files.
-10. Reserved (always zeros).
-11. Two meanings:
-  * *Classic* CBF: unknown.
-  * *Extended* CBF: time of CBF creation represented as *FILETIME* - see
+11. Reserved (always zeros).
+12. Two possible meanings:
+  * *ZBL0* and *ZBL1 Extended*:
+time of CBF creation represented as *FILETIME* - see
 [windef.h](https://github.com/wine-mirror/wine/blob/master/include/windef.h)
 for more details.
-12. Reserved (always zeros) - available for header size >= 64 only.
-13. Label of this sub block - always 0x1 - this and following available for header size >= 70 only.
-14. Length of Comment (with terminating NULL character).
-15. Comment (HB for hradba folder, maps for maps folder, POKUS for setup.cbf).
+  * *ZBL1 Classic*: unknown.
+13. Reserved (always zeros) - available for header size >= 64 only.
+14. Label of this sub block - always 0x1 - this and following available for header size >= 70 only.
+15. Length of Comment (with terminating NULL character).
+16. Comment (HB for hradba folder, maps for maps folder, POKUS for setup.cbf).
 
 Table of Files
 ==============
 
 Table of Files consists of file descriptor for each file stored one by one.
-Before every descriptor is stored its size.
+For *ZBL1*, before every descriptor is stored its size.
 
-Size of file descriptor
------------------------
+Size of file descriptor (ZBL1 only)
+-----------------------------------
 
 Total size: 4
 
@@ -76,9 +84,9 @@ File descriptor
 ---------------
 
 Descriptor of file in CBF archive.
-All fields are encrypted.
+For *ZBL1* version all fields are encrypted.
 
-Total size: Descriptor size
+Total size: 40 + file name
 
 | Offset | Name            | Type        |
 |--------|-----------------|-------------|
@@ -96,25 +104,26 @@ Total size: Descriptor size
 1. Offset of stored file in CBF archive.
 2. Reserved (always zeros).
 3. Two meanings:
-  * *Classic* CBF: reserved (always zeros).
-  * *Extended* CBF: unknown.
-4. Two meanings:
-  * *Classic* CBF: reserved (always zeros).
-  * *Extended* CBF: time of file creation represented as *FILETIME* structure.
+  * *ZBL0* and *ZBL1 Extended*: unknown.
+  * *ZBL1 Classic*: reserved (always zeros).
+4. Two possible meanings:
+  * *ZBL0* and *ZBL1 Extended*:
+time of file creation represented as *FILETIME* structure.
+  * *ZBL1 Classic*: reserved (always zeros).
 5. File size after extraction
 6. Reserved (always zeros).
 7. File size in the CBF archive in case of compression as a storage method.
 Otherwise zero.
 8. Encoding method - describes how is file stored in CBF archive:
-  * 0x0 file is encrypted.
+  * 0x0 file is not encoded (*ZBL0*) or is encrypted (*ZBL1*).
   * 0x1 file is compressed.
 9. Unknown.
 10. File name with NULL character.
-Length of the string can be calculated as "Descriptor size - 40".
+For *ZBL1*, the length of the string can be calculated as "Descriptor size - 40".
 Uses windows-1250 encoding.
 
-Encryption of file descriptor
------------------------------
+Encryption of file descriptor (ZBL1 only)
+-----------------------------------------
 
 File descriptors are encrypted using simple symetric algorithm with *lut* (look-up table) and its *key*.
 The *lut* has following values:
@@ -139,10 +148,10 @@ key = enc_val;
 Files
 =====
 
-Files stored in CBF archive can be either encrypted or compressed.
+Files stored in CBF archive can be either plain (*ZBL0* only), encrypted (*ZBL1* only) or compressed (both *ZBL0* and *ZBL1*).
 
-Encrypted files
----------------
+Encrypted files (ZBL1 only)
+---------------------------
 
 Files are encrypted using simple algorithm with static *salt* (0xA6) and file length as a *key*.
 All values are 8b wide.

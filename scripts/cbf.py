@@ -123,7 +123,8 @@ class LZW(object):
         return bytes(data)
 
 class CBFFile(object):
-    def __init__(self, name, size, data, compressed):
+    def __init__(self, version, name, size, data, compressed):
+        self.version = version
         self.basename = ntpath.basename(name)
         self.dirname  = ntpath.dirname(name).split("\\")
         self.size = size
@@ -175,11 +176,14 @@ class CBFFile(object):
     def extractData(self):
         extractedData = bytes()
 
-        if   self.compressed == 0:
+        if   self.compressed == 0 and self.version == CBFArchive.Version.ZBL0:
             logging.log(logging.VERBOSE, "  extracting: " + self.basename)
+            extractedData = self.data
+        elif self.compressed == 0 and self.version == CBFArchive.Version.ZBL1:
+            logging.log(logging.VERBOSE, "  decrypting: " + self.basename)
             extractedData = self.decrypt()
         elif self.compressed == 1:
-            logging.log(logging.VERBOSE, "  inflating:  " + self.basename)
+            logging.log(logging.VERBOSE, "  inflating: " + self.basename)
             extractedData = self.decompress()
         else:
             logging.error("    Skipping (Unknown compression method): " + self.basename)
@@ -192,7 +196,11 @@ class CBFFile(object):
 class CBFArchive(object):
     class Header:
         size = 0x34
-        sig = b'BIGF\x01ZBL'
+        sig = b'BIGF'
+
+    class Version:
+        ZBL0 = b'\x00ZBL'
+        ZBL1 = b'\x01ZBL'
 
     class Mode:
         classic = 0
@@ -202,6 +210,7 @@ class CBFArchive(object):
         itemSize = 0x28
 
     def __init__(self, name, data):
+        self.fileVer  = CBFArchive.Version.ZBL0
         self.fileMode = CBFArchive.Mode.classic
         self.fileName = name
         self.fileData = data
@@ -224,11 +233,18 @@ class CBFArchive(object):
         if len(self.fileData) < CBFArchive.Header.size:
             raise RuntimeError("  Invalid header size")
 
-        (sig, CBFSize, res1, fileCnt, tableOffset, res2, tableSize, res3) = unpack("<8sIIIIIII", self.fileData)
+        (sig, ver, CBFSize, res1, fileCnt, tableOffset, res2, tableSize, res3) = unpack("<4s4sIIIIIII", self.fileData)
         (headerSize, res4, lowDateTime, highDateTime) = unpack("<IIII", self.fileData[36:])
 
         if sig != CBFArchive.Header.sig:
             raise RuntimeError("  Invalid header signature")
+
+        if ver == CBFArchive.Version.ZBL0:
+            self.fileVer = CBFArchive.Version.ZBL0
+        elif ver == CBFArchive.Version.ZBL1:
+            self.fileVer = CBFArchive.Version.ZBL1
+        else:
+            raise RuntimeError("  Unknown CBF version")
 
         if tableOffset + tableSize > CBFSize:
             raise RuntimeError("  Invalid file table location")
@@ -239,6 +255,9 @@ class CBFArchive(object):
             logging.error("  Invalid CBF size")
         if res1 != 0 or res2 != 0 or res3 != 0 or res4 != 0:
             logging.warning("  Non-zero reserved data in header")
+
+        if ver == CBFArchive.Version.ZBL0 and headerSize != 64:
+            raise RuntimeError("  Invalid header size for ZBL0 version")
 
         if headerSize != 0:
             if len(self.fileData) < headerSize:
@@ -266,24 +285,29 @@ class CBFArchive(object):
     def parse_table(self, fileTable):
         fileList = []
         pos = 0
+        itemSize = CBFArchive.Table.itemSize
+        descSize = 0 if self.fileVer == CBFArchive.Version.ZBL0 else 2
 
         while pos < len(fileTable):
-            if pos + 2 > len(fileTable):
+            if pos + descSize > len(fileTable):
                 logging.error("  Corrupted item size in file table")
                 break
 
-            (itemSize, ) = unpack("<H",fileTable[pos:])
-            pos += 2
+            if self.fileVer == CBFArchive.Version.ZBL1:
+                (itemSize, ) = unpack("<H",fileTable[pos:])
+                pos += descSize
 
             """
             Table item must be in the bounds of Table of Files and also must be at least as big as
             table item plus two (empty file name and file name of zero length is forbidden)
             """
-            if (pos + itemSize > len(fileTable)) or (itemSize < CBFArchive.Table.itemSize + 2):
+            if (pos + itemSize > len(fileTable)) or (itemSize < CBFArchive.Table.itemSize):
                 logging.error("  Corrupted item in file table")
                 break
 
-            itemData = self.decrypt(fileTable[pos:pos+itemSize])
+            itemData = fileTable[pos:pos+itemSize]
+            if self.fileVer == CBFArchive.Version.ZBL1:
+                itemData = self.decrypt(itemData)
             pos += itemSize
 
             (fileOffset, res1, unk1, lowDateTime, highDateTime) = unpack("<I4I", itemData)
@@ -296,16 +320,25 @@ class CBFArchive(object):
                 if unk1 != 0 or lowDateTime != 0 or highDateTime != 0:
                     logging.warning("  Non-zero reserved data in classic file desc")
 
-            (fileName, ) = unpack("<" + str(itemSize - CBFArchive.Table.itemSize) + "s", itemData[CBFArchive.Table.itemSize:])
-            if fileName[-1] != 0x0:
-                logging.error("  Corrupted item name in file table")
-                break
+            if self.fileVer == CBFArchive.Version.ZBL0:
+                null_pos = fileTable[pos:].find(b'\x00')
+                if null_pos == -1:
+                    logging.error("  Corrupted item name in file table")
+                    break
+                fileName = fileTable[pos:pos+null_pos + 1]
+                pos += null_pos + 1
+            else:
+                (fileName, ) = unpack("<" + str(itemSize - CBFArchive.Table.itemSize) + "s", itemData[CBFArchive.Table.itemSize:])
+                if fileName[-1] != 0x0:
+                    logging.error("  Corrupted item name in file table")
+                    break
+
             fileName = str(fileName, 'windows-1250').strip(chr(0))
 
             if fileStorageType == 0:
                 fileStoredSize = fileSize
                 if fileCompressedSize != 0:
-                    logging.warning("  Compressed size should be zero for encrypted files")
+                    logging.warning("  Compressed size should be zero for non-compressed files")
             elif fileStorageType == 1:
                 fileStoredSize = fileCompressedSize
             else:
@@ -316,7 +349,7 @@ class CBFArchive(object):
                 logging.error("  Invalid file data location")
                 continue
 
-            file = CBFFile(fileName, fileSize, self.fileData[fileOffset:fileOffset + fileStoredSize], fileStorageType)
+            file = CBFFile(self.fileVer, fileName, fileSize, self.fileData[fileOffset:fileOffset + fileStoredSize], fileStorageType)
             fileList.append(file)
 
         return fileList

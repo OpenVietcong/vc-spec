@@ -1,4 +1,5 @@
 This document describes BES (BenyErikSolitude) files.
+The BES is chunk-based file format.
 
 File format
 ===========

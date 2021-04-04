@@ -319,6 +319,8 @@ class CBFArchive(object):
             if self.fileMode == CBFArchive.Mode.classic:
                 if unk1 != 0 or lowDateTime != 0 or highDateTime != 0:
                     logging.warning("  Non-zero reserved data in classic file desc")
+            #else:
+            #    date = lowDateTime + (highDateTime)...
 
             if self.fileVer == CBFArchive.Version.ZBL0:
                 null_pos = fileTable[pos:].find(b'\x00')
@@ -368,6 +370,7 @@ class CBFArchive(object):
                 fileWrite = open(filePath, "wb")
                 fileWrite.write(fileData)
                 fileWrite.close()
+                os.utime(filePath, (0, 0))
 
     def parse(self, extract):
         (fileCnt, fileTable) = self.parse_header()

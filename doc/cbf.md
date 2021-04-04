@@ -60,8 +60,9 @@ for more details.
   * *ZBL1 Classic*: unknown.
 13. Reserved (always zeros) - available for header size >= 64 only.
 14. Label of this sub block - always 0x1 - this and following available for header size >= 70 only.
-15. Length of Comment (with terminating NULL character).
-16. Comment (HB for hradba folder, maps for maps folder, POKUS for setup.cbf).
+15. Length of Comment.
+16. Comment without terminating NULL character
+(HB for hradba folder, maps for maps folder, POKUS for setup.cbf).
 
 Table of Files
 ==============

@@ -97,6 +97,7 @@ Here is quick reference table of known data sub-blocks:
 | 12     | Name length     | UINT32   |
 | 16     | Name            | CHAR[]   |
 
+-rozlišovat root object (nema rodice) a potomky (ma rodice)
 1. Label of this sub-block - always 0x0001
 2. Size of this sub-block (including this field and label)
 3. Number of 'Object' sub-blocks inside of this one

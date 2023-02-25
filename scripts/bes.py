@@ -277,6 +277,21 @@ class BES(object):
             logging.warning("Unknown block {}".format(hex(label)))
             hex_dump(subblock, index)
 
+    def get_block_labels(self, data, index):
+        blocks = dict()
+        # Search for all blocks
+        start = 0
+        while len(data[start:]) > 0:
+            (label, size) = self.parse_block_desc(data[start:])
+
+            if label not in blocks:
+                blocks[label] = 1
+            else:
+                blocks[label] = blocks[label] + 1
+            start += size
+
+        return blocks
+
     def parse_blocks(self, blocks, data, index):
         # Init return values
         cnt = dict()
@@ -328,21 +343,30 @@ class BES(object):
         logging.log(logging.VERBOSE, "{}Object ({} B) - children: {}, name({}): {}".format(
             " "*(index*2), len(data), children, name_size,    pchar_to_string(name)))
 
+        blocks = self.get_block_labels(data[8 + name_size:], index + 1)
         if index == 0:
             res = self.parse_blocks({
                     BES.BlockID.Object         : BES.BlockPresence.ReqMultiple,
                     BES.BlockID.Material       : BES.BlockPresence.ReqSingle},
                     data[8 + name_size:], index + 1)
-        else:
+        elif BES.BlockID.Model in blocks:
             res = self.parse_blocks({
                     BES.BlockID.Object         : BES.BlockPresence.OptMultiple,
-                    BES.BlockID.Model          : BES.BlockPresence.OptSingle,
-                    BES.BlockID.Properties     : BES.BlockPresence.OptSingle,
-                    BES.BlockID.Transformation : BES.BlockPresence.OptSingle,
-                    BES.BlockID.Unk38          : BES.BlockPresence.OptSingle},
+                    BES.BlockID.Model          : BES.BlockPresence.ReqSingle},
                     data[8 + name_size:], index + 1)
+        elif BES.BlockID.Unk38 in blocks:
+            res = self.parse_blocks({
+                    BES.BlockID.Object         : BES.BlockPresence.OptSingle,
+                    BES.BlockID.Properties     : BES.BlockPresence.ReqSingle,
+                    BES.BlockID.Transformation : BES.BlockPresence.ReqSingle,
+                    BES.BlockID.Unk38          : BES.BlockPresence.ReqSingle},
+                    data[8 + name_size:], index + 1)
+        else:
+            logging.error("{}Unexpected object block children".format(
+                " "*(index*2)))
 
-        if len(res[BES.BlockID.Object]) != children:
+        objs = blocks[BES.BlockID.Object] if BES.BlockID.Object in blocks else 0
+        if objs != children:
             logging.error("{}Number of object children does not match".format(
                 " "*(index*2)))
 

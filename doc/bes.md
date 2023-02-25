@@ -97,6 +97,10 @@ Object is used primary as a container of the other objects. The top-level object
 (usually called Scene Root) is special and must contain at least one other object and just one
 material sub-block.
 
+Except from the Scene Root, we may distinguish objects by the sub-blocks they contain. They may
+contain either model or Unknown 0x038 sub-blocks. But all object sub-blocks inside may be of
+any type of the object container, except the Scene Root, which may be in the BES file only once.
+
 | Offset | Name            | Type     |
 |--------|-----------------|----------|
 | 0      | Label           | UINT32LE |
@@ -115,12 +119,15 @@ For Root Scene object are required following sub-blocks:
 * Object (1 at least)
 * Material (1)
 
-Other objects may contain following sub-blocks:
+Model container must contain following sub-blocks:
 * Object (any)
-* Model (1 at most)
-* Properties (1 at most)
-* Transformation (1 at most)
-* Unknown 0x038 (1 at most)
+* Model (1)
+
+Unknown 0x038 container must contain following sub-blocks:
+* Object (1 at most)
+* Properties (1)
+* Transformation (1)
+* Unknown 0x038 (1)
 
 ### Model
 

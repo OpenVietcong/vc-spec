@@ -93,6 +93,10 @@ Immediately in the data block may be following sub-blocks:
 
 ### Object
 
+Object is used primary as a container of the other objects. The top-level object
+(usually called Scene Root) is special and must contain at least one other object and just one
+material sub-block.
+
 | Offset | Name            | Type     |
 |--------|-----------------|----------|
 | 0      | Label           | UINT32LE |
@@ -107,13 +111,16 @@ Immediately in the data block may be following sub-blocks:
 4. Length of 'Name' string
 5. Name
 
-Other data sub-blocks may follow. Known sub-blocks:
+For Root Scene object are required following sub-blocks:
+* Object (1 at least)
+* Material (1)
+
+Other objects may contain following sub-blocks:
 * Object (any)
 * Model (1 at most)
 * Properties (1 at most)
 * Transformation (1 at most)
 * Unknown 0x038 (1 at most)
-* Material (1 at most)
 
 ### Model
 

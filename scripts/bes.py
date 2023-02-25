@@ -323,12 +323,18 @@ class BES(object):
         logging.log(logging.VERBOSE, "{}Object ({} B) - children: {}, name({}): {}".format(
             " "*(index*2), len(data), children, name_size,    pchar_to_string(name)))
 
-        res = self.parse_blocks({BES.BlockID.Object        : BES.BlockPresence.OptMultiple,
+        if index == 0:
+            res = self.parse_blocks({
+                    BES.BlockID.Object         : BES.BlockPresence.ReqMultiple,
+                    BES.BlockID.Material       : BES.BlockPresence.ReqSingle},
+                    data[8 + name_size:], index + 1)
+        else:
+            res = self.parse_blocks({
+                    BES.BlockID.Object         : BES.BlockPresence.OptMultiple,
                     BES.BlockID.Model          : BES.BlockPresence.OptSingle,
                     BES.BlockID.Properties     : BES.BlockPresence.OptSingle,
                     BES.BlockID.Transformation : BES.BlockPresence.OptSingle,
-                    BES.BlockID.Unk38          : BES.BlockPresence.OptSingle,
-                    BES.BlockID.Material       : BES.BlockPresence.OptSingle},
+                    BES.BlockID.Unk38          : BES.BlockPresence.OptSingle},
                     data[8 + name_size:], index + 1)
 
         if len(res[BES.BlockID.Object]) != children:

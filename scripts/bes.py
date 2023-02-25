@@ -279,8 +279,10 @@ class BES(object):
 
     def parse_blocks(self, blocks, data, index):
         # Init return values
+        cnt = dict()
         ret = dict()
         for label in blocks:
+            cnt[label] = 0
             if (blocks[label] == BES.BlockPresence.OptSingle or
             blocks[label] == BES.BlockPresence.ReqSingle):
                 ret[label] = None
@@ -297,9 +299,9 @@ class BES(object):
                 logging.warning("{}Unexpected block {:04X} [{} B] at this location".format(
                     " "*(index*2), label, size))
             else:
+                cnt[label] += 1
                 if (blocks[label] == BES.BlockPresence.OptSingle or
                 blocks[label] == BES.BlockPresence.ReqSingle):
-                    blocks.pop(label)
                     ret[label] = self.parse_block_by_label(label, subblock, index)
                 else:
                     ret[label].append(self.parse_block_by_label(label, subblock, index))
@@ -311,9 +313,12 @@ class BES(object):
 
         # Check if all required blocks were found in this block
         for label in blocks:
-            if ((blocks[label] == BES.BlockPresence.ReqSingle) or
-            (blocks[label] == BES.BlockPresence.ReqMultiple and label not in ret)):
-                logging.warning("Invalid number of occurrences of block {:04X}".format(label))
+            if blocks[label] == BES.BlockPresence.ReqSingle and cnt[label] != 1:
+                logging.warning("{}Explected single block {:04X}".format(
+                     " "*(index*2), label))
+            if blocks[label] == BES.BlockPresence.ReqMultiple and cnt[label] == 0:
+                logging.warning("{}Expected at least one block {:04X}".format(
+                     " "*(index*2), label))
 
         return ret
 

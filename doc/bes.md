@@ -87,6 +87,10 @@ Here is quick reference table of known data sub-blocks:
 | Standard       | 0x1001 |
 | PteroMat       | 0x1002 |
 
+Immediately in the data block may be following sub-blocks:
+* Object (1)
+* Info (1 at most)
+
 ### Object
 
 | Offset | Name            | Type     |

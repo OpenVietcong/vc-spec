@@ -240,7 +240,7 @@ class BES(object):
 
     def parse_data(self):
         res = self.parse_blocks({BES.BlockID.Object  : BES.BlockPresence.ReqSingle,
-                    BES.BlockID.Info : BES.BlockPresence.ReqSingle},
+                    BES.BlockID.Info : BES.BlockPresence.OptSingle},
                     self.data[0x3010:], 0)
 
     def parse_block_desc(self, data):

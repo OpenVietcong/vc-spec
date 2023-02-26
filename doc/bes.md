@@ -91,6 +91,28 @@ Immediately in the data block may be following sub-blocks:
 * Object (1)
 * Info (1 at most)
 
+Here is quick reference tree of the data block, how it can look like:
+```
+Data
+├── Object (Root Scene)
+│   ├── Object (Model)
+│   │   ├── Object
+│   │   └── Model
+│   │       ├── Mesh
+│   │       │   ├── Vertices
+│   │       │   └── Faces
+│   │       ├── Properties
+│   │       ├── Transformation
+│   │       └── Unknown 0x036
+│   ├── Object (Unknown 0x038)
+│   │   ├── Object
+│   │   ├── Properties
+│   │   ├── Transformation
+│   │   └── Unknown 0x038
+│   └── Material
+└── Info
+```
+
 ### Object
 
 Object is used primary as a container of the other objects. The top-level object
